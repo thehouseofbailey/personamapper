@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Tag Manager Integration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Google Tag Manager Integration</h1>
+                <div>
+                    <span class="badge badge-success">Admin Only</span>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Ready-to-use code snippets for Google Tag Manager integration.</strong>
+                Copy and paste these code blocks into your GTM container to enable PersonaMap tracking.
+            </div>
+
+            <!-- HTML Tag Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code"></i> 1. Custom HTML Tag
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('html-tag-code')">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Create a new Custom HTML Tag in GTM and paste this code:</p>
+                    <pre id="html-tag-code" class="bg-light p-3 rounded"><code><!-- PersonaMap Integration -->
+&lt;script&gt;
+// Configuration
+window.PERSONAMAP_API_URL = '{{ api_url }}';
+window.PERSONAMAP_AUTO_INIT = true;
+&lt;/script&gt;
+&lt;script src="{{ client_js_url }}"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+// Optional: Listen for persona prediction events
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.personaMapInstance) {
+        window.personaMapInstance.on('onPersonaPrediction', function(data) {
+            console.log('PersonaMap: Persona predicted', data.predicted_personas[0]?.title);
+        });
+    }
+});
+&lt;/script&gt;</code></pre>
+                    <div class="mt-3">
+                        <strong>Trigger:</strong> All Pages<br>
+                        <strong>Tag Type:</strong> Custom HTML
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trigger Setup Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i> 2. Custom Event Trigger
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Create a Custom Event trigger with these settings:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Trigger Name:</strong></td>
+                                    <td>PersonaMap - Persona Update</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Trigger Type:</strong></td>
+                                    <td>Custom Event</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Event Name:</strong></td>
+                                    <td><code>personaPredictionUpdate</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>This trigger fires on:</strong></td>
+                                    <td>All Custom Events</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variables Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags"></i> 3. Built-in Variables
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">These variables are automatically available in the dataLayer:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><code>{{predictedPersona}}</code></td>
+                                    <td>The predicted persona name</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{{personaConfidence}}</code></td>
+                                    <td>Confidence score (0-1)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{{personaTimestamp}}</code></td>
+                                    <td>When prediction was made</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{{personaSessionId}}</code></td>
+                                    <td>Session identifier</td>
+                                </tr>
+                                <tr>
+                                    <td><code>{{personaPagesAnalyzed}}</code></td>
+                                    <td>Number of pages analyzed</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GA4 Event Tag Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fab fa-google"></i> 4. Google Analytics 4 Event Tag
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('ga4-event-code')">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Create a GA4 Event Tag triggered by the PersonaMap event:</p>
+                    <pre id="ga4-event-code" class="bg-light p-3 rounded"><code>// GA4 Event Tag (triggered by personaPredictionUpdate)
+gtag('event', 'persona_identified', {
+  'persona_name': '{{predictedPersona}}',
+  'confidence_score': '{{personaConfidence}}',
+  'pages_analyzed': '{{personaPagesAnalyzed}}',
+  'session_id': '{{personaSessionId}}'
+});</code></pre>
+                    <div class="mt-3">
+                        <strong>Tag Type:</strong> Google Analytics: GA4 Event<br>
+                        <strong>Event Name:</strong> persona_identified<br>
+                        <strong>Trigger:</strong> PersonaMap - Persona Update
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom JavaScript Variable Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code"></i> 5. Custom JavaScript Variable (Optional)
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('custom-js-variable')">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Create a Custom JavaScript Variable to access the current persona:</p>
+                    <pre id="custom-js-variable" class="bg-light p-3 rounded"><code>function() {
+    // Get current predicted persona
+    if (window.dataLayer) {
+        for (var i = window.dataLayer.length - 1; i >= 0; i--) {
+            if (window.dataLayer[i].predictedPersona) {
+                return window.dataLayer[i].predictedPersona;
+            }
+        }
+    }
+    return 'Unknown';
+}</code></pre>
+                    <div class="mt-3">
+                        <strong>Variable Type:</strong> Custom JavaScript<br>
+                        <strong>Variable Name:</strong> PersonaMap - Current Persona
+                    </div>
+                </div>
+            </div>
+
+            <!-- Setup Instructions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ol"></i> Setup Instructions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li><strong>Copy the JavaScript client file</strong> to your website's static files directory</li>
+                        <li><strong>Create the Custom HTML Tag</strong> in GTM using the code above</li>
+                        <li><strong>Set the trigger</strong> to "All Pages" for the HTML tag</li>
+                        <li><strong>Create the Custom Event trigger</strong> for persona updates</li>
+                        <li><strong>Create GA4 Event tags</strong> triggered by persona updates</li>
+                        <li><strong>Test the implementation</strong> using GTM Preview mode</li>
+                        <li><strong>Publish your container</strong> when testing is complete</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- API Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> API Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>API Base URL:</strong></td>
+                                    <td><code>{{ api_url }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Client Library URL:</strong></td>
+                                    <td><code>{{ client_js_url }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Health Check:</strong></td>
+                                    <td><a href="{{ api_url }}/health" target="_blank">{{ api_url }}/health</a></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testing Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-vial"></i> Testing & Validation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Use these tools to test your implementation:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> <a href="{{ url_for('api.health_check') }}" target="_blank">API Health Check</a></li>
+                                <li><i class="fas fa-check text-success"></i> <a href="/test_api.html" target="_blank">Interactive API Test</a></li>
+                                <li><i class="fas fa-check text-success"></i> GTM Preview Mode</li>
+                                <li><i class="fas fa-check text-success"></i> Browser Developer Console</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Important:</strong> Make sure to test in GTM Preview mode before publishing to production.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent || element.innerText;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showCopySuccess();
+        }).catch(function(err) {
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary success message
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        <i class="fas fa-check"></i> Code copied to clipboard!
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

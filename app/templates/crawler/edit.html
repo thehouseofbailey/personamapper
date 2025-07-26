@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Crawl Job - {{ crawl_job.name }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-pencil-square"></i> Edit Crawl Job</h1>
+                <p class="text-muted">Modify settings for <strong>{{ crawl_job.name }}</strong></p>
+            </div>
+            <a href="{{ url_for('crawler.view_crawl_job', id=crawl_job.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Job
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Job Name</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ name or crawl_job.name }}" required>
+                        <div class="form-text">A descriptive name for this crawl job</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="base_url" class="form-label">Base URL</label>
+                        <input type="url" class="form-control" id="base_url" name="base_url" 
+                               value="{{ base_url or crawl_job.base_url }}" required 
+                               placeholder="https://example.com">
+                        <div class="form-text">The starting URL for the crawl (must include http:// or https://)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="max_pages" class="form-label">Maximum Pages</label>
+                        <input type="number" class="form-control" id="max_pages" name="max_pages" 
+                               value="{{ max_pages or crawl_job.max_pages }}" min="1" max="10000" required>
+                        <div class="form-text">Maximum number of pages to crawl (1-10,000)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="include_patterns" class="form-label">Include Patterns (Optional)</label>
+                        <textarea class="form-control" id="include_patterns" name="include_patterns" 
+                                  rows="3" placeholder="/blog/*&#10;/articles/*&#10;/news/*">{{ include_patterns or crawl_job.include_patterns or '' }}</textarea>
+                        <div class="form-text">URL patterns to include (one per line). Leave empty to crawl all pages.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="exclude_patterns" class="form-label">Exclude Patterns (Optional)</label>
+                        <textarea class="form-control" id="exclude_patterns" name="exclude_patterns" 
+                                  rows="3" placeholder="/admin/*&#10;/login/*&#10;*.pdf">{{ exclude_patterns or crawl_job.exclude_patterns or '' }}</textarea>
+                        <div class="form-text">URL patterns to exclude (one per line)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="crawl_mode" class="form-label">Crawl Mode</label>
+                        <select class="form-select" id="crawl_mode" name="crawl_mode" required>
+                            <option value="incremental" {{ 'selected' if (crawl_mode or crawl_job.crawl_mode) == 'incremental' else '' }}>Incremental - Skip already crawled URLs</option>
+                            <option value="overwrite" {{ 'selected' if (crawl_mode or crawl_job.crawl_mode) == 'overwrite' else '' }}>Overwrite - Re-crawl and update existing URLs</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Incremental:</strong> Skip URLs that have already been crawled (prevents duplicates)<br>
+                            <strong>Overwrite:</strong> Re-crawl existing URLs and update their content and mappings
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="schedule" class="form-label">Schedule (Optional)</label>
+                        <select class="form-select" id="schedule" name="schedule">
+                            <option value="">Manual only</option>
+                            <option value="daily" {{ 'selected' if (schedule or crawl_job.schedule) == 'daily' else '' }}>Daily</option>
+                            <option value="weekly" {{ 'selected' if (schedule or crawl_job.schedule) == 'weekly' else '' }}>Weekly</option>
+                            <option value="monthly" {{ 'selected' if (schedule or crawl_job.schedule) == 'monthly' else '' }}>Monthly</option>
+                        </select>
+                        <div class="form-text">Automatic crawl schedule</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('crawler.view_crawl_job', id=crawl_job.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Crawl Job
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle"></i> Job Information
+                </h6>
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <p class="mb-1">{{ crawl_job.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    <p class="mb-1">
+                        {% if crawl_job.is_running() %}
+                            <span class="badge bg-success">Running</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <strong>Pages Crawled:</strong>
+                    <p class="mb-1">{{ crawl_job.pages_crawled or 0 }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong>Last Run:</strong>
+                    <p class="mb-1">{{ crawl_job.last_run_at.strftime('%B %d, %Y at %I:%M %p') if crawl_job.last_run_at else 'Never' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-exclamation-triangle"></i> Important Notes
+                </h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-info-circle text-info"></i>
+                        <small>Changes will take effect on the next crawl run</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-info-circle text-info"></i>
+                        <small>Cannot edit while crawl job is running</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-info-circle text-info"></i>
+                        <small>Changing crawl mode affects future crawls only</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Editing Tips
+                </h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <small><strong>URL Changes:</strong> Will affect link discovery</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <small><strong>Pattern Updates:</strong> Refine what gets crawled</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <small><strong>Mode Switch:</strong> Change incremental/overwrite behavior</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

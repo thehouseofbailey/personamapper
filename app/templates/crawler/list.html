@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Crawl Jobs - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-search"></i> Crawl Jobs</h1>
+                <p class="text-muted">Manage your website crawling jobs</p>
+            </div>
+            <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Crawl Job
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if crawl_jobs.items %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Base URL</th>
+                                <th>Status</th>
+                                <th>Pages</th>
+                                <th>Schedule</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in crawl_jobs.items %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('crawler.view_crawl_job', id=job.id) }}" class="text-decoration-none">
+                                        <strong>{{ job.name }}</strong>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{{ job.base_url }}" target="_blank" class="text-decoration-none">
+                                        {{ job.base_url[:40] }}{% if job.base_url|length > 40 %}...{% endif %}
+                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if job.status == 'running' %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-play-circle"></i> Running
+                                        </span>
+                                    {% elif job.status == 'completed' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Completed
+                                        </span>
+                                    {% elif job.status == 'failed' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Failed
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-pause-circle"></i> Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ job.crawled_pages.count() }}</span>
+                                    <small class="text-muted">/ {{ job.max_pages }}</small>
+                                </td>
+                                <td>
+                                    {% if job.schedule %}
+                                        <span class="badge bg-warning">{{ job.schedule.title() }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Manual</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ job.created_at.strftime('%Y-%m-%d') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('crawler.view_crawl_job', id=job.id) }}" 
+                                           class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if job.status != 'running' %}
+                                            <form method="POST" action="{{ url_for('crawler.start_crawl_job', id=job.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-outline-success" title="Start">
+                                                    <i class="bi bi-play"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="POST" action="{{ url_for('crawler.stop_crawl_job', id=job.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-outline-warning" title="Stop">
+                                                    <i class="bi bi-stop"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <a href="{{ url_for('crawler.edit_crawl_job', id=job.id) }}" 
+                                           class="btn btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('crawler.delete_crawl_job', id=job.id) }}" 
+                                              class="d-inline" onsubmit="return confirmDelete('Are you sure you want to delete this crawl job and all its data?')">
+                                            <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if crawl_jobs.pages > 1 %}
+<div class="row mt-4">
+    <div class="col-12">
+        <nav aria-label="Crawl jobs pagination">
+            <ul class="pagination justify-content-center">
+                {% if crawl_jobs.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('crawler.list_crawl_jobs', page=crawl_jobs.prev_num) }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in crawl_jobs.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != crawl_jobs.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('crawler.list_crawl_jobs', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if crawl_jobs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('crawler.list_crawl_jobs', page=crawl_jobs.next_num) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="row">
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-search display-1 text-muted"></i>
+            <h3 class="mt-3">No Crawl Jobs Yet</h3>
+            <p class="text-muted">Create your first crawl job to start extracting content from websites.</p>
+            <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Your First Crawl Job
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

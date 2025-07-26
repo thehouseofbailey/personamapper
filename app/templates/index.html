@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}PersonaMap - Content Persona Mapping{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-8 text-center">
+        <h1 class="display-4 text-primary mb-4">
+            <i class="bi bi-person-lines-fill"></i> PersonaMap
+        </h1>
+        <p class="lead mb-5">
+            Map your website content to user personas with intelligent crawling and analysis
+        </p>
+        
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people fs-1 text-primary mb-3"></i>
+                        <h5>Define Personas</h5>
+                        <p class="text-muted">Create detailed user personas with descriptions and keywords</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-search fs-1 text-success mb-3"></i>
+                        <h5>Crawl Content</h5>
+                        <p class="text-muted">Automatically crawl websites and extract content for analysis</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-diagram-3 fs-1 text-warning mb-3"></i>
+                        <h5>Map & Analyze</h5>
+                        <p class="text-muted">Intelligently map content to personas and generate insights</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-5">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg me-3">
+                <i class="bi bi-box-arrow-in-right"></i> Sign In
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-person-plus"></i> Create Account
+            </a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-lightbulb"></i> Key Features
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="bi bi-check-circle text-success"></i> Persona management</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Website crawling</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Content analysis</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Mapping reports</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Export capabilities</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Create Persona - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-person-plus"></i> Create New Persona</h1>
+                <p class="text-muted">Define a new user persona for content mapping</p>
+            </div>
+            <a href="{{ url_for('personas.list_personas') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Personas
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">A clear, descriptive name for this persona</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Detailed description of this persona's characteristics and behaviors</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.keywords.label(class="form-label") }}
+                        {{ form.keywords(class="form-control" + (" is-invalid" if form.keywords.errors else ""), rows="3") }}
+                        {% if form.keywords.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.keywords.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Comma-separated keywords that identify content relevant to this persona</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('personas.list_personas') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Persona
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Tips for Creating Personas
+                </h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Be Specific:</strong> Use clear, descriptive titles
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Keywords Matter:</strong> Include relevant terms your audience uses
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Think Behavior:</strong> Focus on how they interact with content
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Use Examples:</strong> Include specific interests and goals
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle"></i> Example Keywords
+                </h6>
+                <p class="small text-muted">
+                    technology, innovation, AI, machine learning, startups, productivity, business strategy, leadership
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

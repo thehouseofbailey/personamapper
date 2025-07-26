@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PersonaMap API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .api-section {
+            margin-bottom: 30px;
+        }
+        .api-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .persona-card {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .confidence-score {
+            font-weight: bold;
+            color: #1976d2;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PersonaMap API Test Interface</h1>
+        <p>This page demonstrates the PersonaMap API and JavaScript client library functionality.</p>
+        
+        <div id="client-status" class="status">
+            <strong>Client Status:</strong> <span id="status-text">Initializing...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>1. API Health Check</h2>
+            <button class="test-button" onclick="testHealthEndpoint()">Test Health Endpoint</button>
+            <div id="health-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>2. Get Page Personas</h2>
+            <input type="text" id="page-url" placeholder="Enter page URL" value="https://tyk.io/blog/building-api-platforms-that-delight-part-2-distributed-development-teams/">
+            <button class="test-button" onclick="testPagePersonas()">Get Page Personas</button>
+            <div id="page-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>3. List All Personas</h2>
+            <button class="test-button" onclick="testListPersonas()">List All Personas</button>
+            <div id="list-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>4. Predict User Persona</h2>
+            <button class="test-button" onclick="testPersonaPrediction()">Test Persona Prediction</button>
+            <div id="prediction-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>5. JavaScript Client Library</h2>
+            <button class="test-button" onclick="testClientLibrary()">Initialize Client Library</button>
+            <button class="test-button" onclick="simulatePageVisits()">Simulate Page Visits</button>
+            <button class="test-button" onclick="showClientData()">Show Client Data</button>
+            <div id="client-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="api-section">
+            <h2>6. Real-time Events</h2>
+            <div id="events-log" class="result" style="display: block; height: 200px;">
+                Waiting for events...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:5002/api';
+        let personaMapClient = null;
+        let eventsLog = [];
+
+        // Utility functions
+        function logEvent(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            eventsLog.push(`[${timestamp}] ${message}`);
+            const eventsElement = document.getElementById('events-log');
+            eventsElement.textContent = eventsLog.slice(-20).join('\n'); // Keep last 20 events
+            eventsElement.scrollTop = eventsElement.scrollHeight;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = JSON.stringify(data, null, 2);
+            element.style.color = isError ? '#721c24' : '#333';
+            element.style.backgroundColor = isError ? '#f8d7da' : '#f8f9fa';
+        }
+
+        // API Test Functions
+        async function testHealthEndpoint() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                showResult('health-result', data);
+                logEvent('Health check successful');
+            } catch (error) {
+                showResult('health-result', { error: error.message }, true);
+                logEvent(`Health check failed: ${error.message}`);
+            }
+        }
+
+        async function testPagePersonas() {
+            const url = document.getElementById('page-url').value;
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/personas/page?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                showResult('page-result', data);
+                logEvent(`Page personas retrieved for: ${url}`);
+            } catch (error) {
+                showResult('page-result', { error: error.message }, true);
+                logEvent(`Page personas failed: ${error.message}`);
+            }
+        }
+
+        async function testListPersonas() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/personas/list`);
+                const data = await response.json();
+                showResult('list-result', data);
+                logEvent('Personas list retrieved');
+            } catch (error) {
+                showResult('list-result', { error: error.message }, true);
+                logEvent(`List personas failed: ${error.message}`);
+            }
+        }
+
+        async function testPersonaPrediction() {
+            try {
+                // First get some real URLs from the database
+                const sampleResponse = await fetch(`${API_BASE_URL}/sample-urls?limit=3`);
+                const sampleData = await sampleResponse.json();
+                
+                const testUrls = sampleData.sample_urls ? 
+                    sampleData.sample_urls.map(item => item.url) : 
+                    ['https://tyk.io', 'https://tyk.io/ai-ready-api-management', 'https://tyk.io/self-managed'];
+
+                const response = await fetch(`${API_BASE_URL}/personas/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        visited_urls: testUrls,
+                        session_id: 'test_session_' + Date.now(),
+                        prediction_method: 'weighted'
+                    })
+                });
+                const data = await response.json();
+                showResult('prediction-result', data);
+                logEvent(`Persona prediction completed using real URLs: ${testUrls.join(', ')}`);
+            } catch (error) {
+                showResult('prediction-result', { error: error.message }, true);
+                logEvent(`Persona prediction failed: ${error.message}`);
+            }
+        }
+
+        // Client Library Functions
+        function testClientLibrary() {
+            // Set configuration
+            window.PERSONAMAP_API_URL = API_BASE_URL;
+            window.PERSONAMAP_AUTO_INIT = false;
+
+            // Load the client library dynamically
+            const script = document.createElement('script');
+            script.src = 'personamap-client.js';
+            script.onload = function() {
+                // Initialize client
+                personaMapClient = new PersonaMap({
+                    apiBaseUrl: API_BASE_URL,
+                    debounceDelay: 500
+                });
+
+                // Set up event listeners
+                personaMapClient.on('onPagePersonas', function(data) {
+                    logEvent(`Page personas event: ${data.personas.length} personas found`);
+                });
+
+                personaMapClient.on('onPersonaPrediction', function(data) {
+                    logEvent(`Prediction event: ${data.predicted_personas.length} personas predicted`);
+                });
+
+                personaMapClient.on('onError', function(error) {
+                    logEvent(`Client error: ${error.message}`);
+                });
+
+                showResult('client-result', { status: 'Client library initialized successfully' });
+                document.getElementById('status-text').textContent = 'Client library loaded and initialized';
+                document.getElementById('client-status').className = 'status success';
+                logEvent('PersonaMap client library initialized');
+            };
+            script.onerror = function() {
+                showResult('client-result', { error: 'Failed to load client library' }, true);
+                document.getElementById('status-text').textContent = 'Failed to load client library';
+                document.getElementById('client-status').className = 'status error';
+                logEvent('Failed to load PersonaMap client library');
+            };
+            document.head.appendChild(script);
+        }
+
+        async function simulatePageVisits() {
+            if (!personaMapClient) {
+                alert('Please initialize the client library first');
+                return;
+            }
+
+            try {
+                // Get real URLs from the database
+                const sampleResponse = await fetch(`${API_BASE_URL}/sample-urls?limit=5`);
+                const sampleData = await sampleResponse.json();
+                
+                const testPages = sampleData.sample_urls ? 
+                    sampleData.sample_urls.map(item => ({
+                        url: item.url,
+                        title: item.title
+                    })) : [
+                        { url: 'https://tyk.io', title: 'Tyk API Management' },
+                        { url: 'https://tyk.io/ai-ready-api-management', title: 'AI-ready API management' },
+                        { url: 'https://tyk.io/self-managed', title: 'Tyk Self-Managed' }
+                    ];
+
+                showResult('client-result', { 
+                    status: 'Simulating page visits with real URLs...',
+                    urls: testPages.map(p => p.url)
+                });
+
+                // Simulate visiting pages
+                testPages.forEach((page, index) => {
+                    setTimeout(() => {
+                        // Manually add to visited pages (simulating navigation)
+                        personaMapClient.visitedPages.push({
+                            url: page.url,
+                            timestamp: Date.now(),
+                            title: page.title
+                        });
+                        personaMapClient.saveVisitedPages();
+                        logEvent(`Simulated visit to: ${page.url} (${page.title})`);
+                        
+                        // Trigger prediction update on last page
+                        if (index === testPages.length - 1) {
+                            personaMapClient.refreshPrediction();
+                        }
+                    }, index * 1000);
+                });
+
+            } catch (error) {
+                logEvent(`Error getting sample URLs: ${error.message}`);
+                showResult('client-result', { error: 'Failed to get sample URLs' }, true);
+            }
+        }
+
+        function showClientData() {
+            if (!personaMapClient) {
+                alert('Please initialize the client library first');
+                return;
+            }
+
+            const clientData = {
+                sessionId: personaMapClient.getSessionId(),
+                visitedPages: personaMapClient.getVisitedPagesData(),
+                currentPagePersonas: personaMapClient.getCurrentPagePersonas(),
+                predictedPersonas: personaMapClient.getPredictedPersonas(),
+                currentPrediction: personaMapClient.getCurrentPrediction(),
+                dataLayer: window.dataLayer || []
+            };
+
+            showResult('client-result', clientData);
+            logEvent('Client data displayed');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            logEvent('Test page loaded');
+            document.getElementById('status-text').textContent = 'Ready to test';
+        });
+    </script>
+</body>
+</html>

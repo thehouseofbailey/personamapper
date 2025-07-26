@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted">Overview of your PersonaMap system</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Personas</p>
+                        <h3 class="card-title mb-0">{{ stats.total_personas }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-people fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Crawl Jobs</p>
+                        <h3 class="card-title mb-0">{{ stats.total_crawl_jobs }}</h3>
+                        <small class="text-success">{{ stats.active_crawl_jobs }} active</small>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-search fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Pages Crawled</p>
+                        <h3 class="card-title mb-0">{{ stats.total_pages_crawled }}</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-file-text fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Content Mappings</p>
+                        <h3 class="card-title mb-0">{{ stats.total_mappings }}</h3>
+                        <small class="text-warning">{{ stats.high_confidence_mappings }} high confidence</small>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-diagram-3 fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Running Jobs</p>
+                        <h3 class="card-title mb-0">{{ stats.running_crawl_jobs }}</h3>
+                        {% if stats.running_crawl_jobs > 0 %}
+                        <small class="text-primary">
+                            <i class="bi bi-arrow-clockwise"></i> Active
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-play-circle fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Persona Confidence Over Time Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Persona Confidence Over Time</h5>
+                <small class="text-muted">Average mapping confidence by crawl date</small>
+            </div>
+            <div class="card-body">
+                {% if chart_data.datasets %}
+                    <div style="height: 400px;">
+                        <canvas id="personaConfidenceChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-graph-up text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No crawl data available yet. Chart will appear after running crawl jobs with persona mappings.</p>
+                        <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-primary">Create Crawl Job</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top Personas -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Top Personas</h5>
+                <a href="{{ url_for('personas.list_personas') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if top_personas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Persona</th>
+                                    <th class="text-end">Mappings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for persona, mapping_count in top_personas %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('personas.view_persona', id=persona.id) }}" class="text-decoration-none">
+                                            {{ persona.title }}
+                                        </a>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ mapping_count }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No persona mappings yet. <a href="{{ url_for('personas.create_persona') }}">Create your first persona</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_pages %}
+                    <div class="list-group list-group-flush">
+                        {% for page in recent_pages %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ page.title or 'Untitled Page' }}</h6>
+                                    <p class="mb-1 text-muted small">{{ page.url }}</p>
+                                    <small class="text-muted">
+                                        Crawled {{ page.crawled_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if page.get_mapping_count() > 0 %}
+                                        <span class="badge bg-success">{{ page.get_mapping_count() }} mappings</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No mappings</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('crawler.list_crawl_jobs') }}" class="btn btn-sm btn-outline-primary">View All Crawl Jobs</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No crawled pages yet. <a href="{{ url_for('crawler.create_crawl_job') }}">Create your first crawl job</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Mappings -->
+{% if recent_mappings %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Recent Content Mappings</h5>
+                <a href="{{ url_for('reports.dashboard') }}" class="btn btn-sm btn-outline-primary">View Reports</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Persona</th>
+                                <th>Confidence</th>
+                                <th>Method</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mapping in recent_mappings %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('crawler.view_crawled_page', id=mapping.page_id) }}" class="text-decoration-none">
+                                        {{ mapping.crawled_page.title or 'Untitled Page' }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ mapping.crawled_page.url }}</small>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('personas.view_persona', id=mapping.persona_id) }}" class="text-decoration-none">
+                                        {{ mapping.persona.title }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ mapping.get_confidence_color() }}">
+                                        {{ "%.1f"|format(mapping.confidence_score * 100) }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ mapping.mapping_method }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ mapping.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('personas.create_persona') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Create Persona
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="bi bi-plus-circle"></i><br>
+                            New Crawl Job
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('reports.dashboard') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-graph-up"></i><br>
+                            View Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('main.help') }}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="bi bi-question-circle"></i><br>
+                            Help & Docs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if chart_data.datasets %}
+<script id="chart-data" type="application/json">{{ chart_data | tojson }}</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('personaConfidenceChart').getContext('2d');
+    const chartDataElement = document.getElementById('chart-data');
+    const chartData = JSON.parse(chartDataElement.textContent);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Average Confidence (%)'
+                    },
+                    ticks: {
+                        stepSize: 10,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: {
+                        display: true
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Crawl Date'
+                    },
+                    grid: {
+                        display: true
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Persona Mapping Confidence Over Time'
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return label + ': ' + (value !== null ? value.toFixed(1) + '%' : 'No data');
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

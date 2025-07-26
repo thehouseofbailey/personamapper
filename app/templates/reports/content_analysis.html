@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Content Analysis Report - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-file-earmark-bar-graph"></i> Content Analysis Report</h1>
+                <p class="text-muted">Detailed view of all crawled pages and their persona mappings</p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('reports.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <a href="{{ url_for('reports.export_mappings') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Export Mappings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ stats.total_pages }}</h3>
+                <p class="mb-0">Total Pages</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ stats.mapped_pages }}</h3>
+                <p class="mb-0">Mapped Pages</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3>{{ stats.unmapped_pages }}</h3>
+                <p class="mb-0">Unmapped Pages</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ stats.mapping_rate|round(1) }}%</h3>
+                <p class="mb-0">Mapping Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> Filter Results</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('reports.content_analysis') }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="slug" class="form-label">URL Slug</label>
+                            <input type="text" class="form-control" id="slug" name="slug" 
+                                   value="{{ current_filters.slug }}" 
+                                   placeholder="Search in URL...">
+                            <div class="form-text">Find pages containing specific text in URL</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="crawl_job" class="form-label">Crawl Job</label>
+                            <select class="form-select" id="crawl_job" name="crawl_job">
+                                <option value="all" {% if current_filters.crawl_job == 'all' or not current_filters.crawl_job %}selected{% endif %}>All Crawl Jobs</option>
+                                {% for job in crawl_jobs %}
+                                <option value="{{ job.id }}" {% if current_filters.crawl_job == job.id|string %}selected{% endif %}>
+                                    {{ job.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="persona" class="form-label">Persona Mapping</label>
+                            <select class="form-select" id="persona" name="persona">
+                                <option value="all" {% if current_filters.persona == 'all' or not current_filters.persona %}selected{% endif %}>All Pages</option>
+                                <option value="with_mappings" {% if current_filters.persona == 'with_mappings' %}selected{% endif %}>All Pages with Mappings</option>
+                                <option value="no_mappings" {% if current_filters.persona == 'no_mappings' %}selected{% endif %}>No Mappings</option>
+                                {% for persona in personas %}
+                                <option value="{{ persona.id }}" {% if current_filters.persona == persona.id|string %}selected{% endif %}>
+                                    {{ persona.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('reports.content_analysis') }}" class="btn btn-outline-secondary ms-2">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </a>
+                            {% if current_filters.slug or (current_filters.crawl_job and current_filters.crawl_job != 'all') or (current_filters.persona and current_filters.persona != 'all') %}
+                            <span class="badge bg-info ms-3">
+                                <i class="bi bi-funnel-fill"></i> Filters Active
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if pages.items %}
+    <!-- Crawled Pages Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-table"></i> Crawled Pages & Persona Mappings
+            </h5>
+            <span class="badge bg-primary">{{ pages.total }} total pages</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Page</th>
+                            <th>Crawl Job</th>
+                            <th>Word Count</th>
+                            <th>Crawled At</th>
+                            <th>Persona Mappings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for page in pages.items %}
+                        <tr>
+                            <td>
+                                <div style="max-width: 300px;">
+                                    <strong>{{ page.title or 'Untitled' }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <a href="{{ page.url }}" target="_blank" class="text-decoration-none">
+                                            {{ page.url[:60] }}{% if page.url|length > 60 %}...{% endif %}
+                                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                        </a>
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if page.crawl_job %}
+                                    <a href="{{ url_for('crawler.view_crawl_job', id=page.crawl_job.id) }}" class="text-decoration-none">
+                                        <small>{{ page.crawl_job.name }}</small>
+                                    </a>
+                                {% else %}
+                                    <small class="text-muted">Unknown</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ page.word_count or 0 }} words</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ page.crawled_at.strftime('%Y-%m-%d %H:%M') if page.crawled_at else 'N/A' }}
+                                </small>
+                            </td>
+                            <td>
+                                {% set mappings = page.content_mappings.filter_by(is_active=True).all() %}
+                                {% if mappings %}
+                                    <div style="max-width: 250px;">
+                                        {% for mapping in mappings[:3] %}
+                                            {% set conf_pct = (mapping.confidence_score * 100)|round(1) %}
+                                            {% set conf_class = 'success' if conf_pct >= 70 else 'warning' if conf_pct >= 40 else 'danger' %}
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small>
+                                                    <a href="{{ url_for('personas.view_persona', id=mapping.persona_id) }}" class="text-decoration-none">
+                                                        {{ mapping.persona.title }}
+                                                    </a>
+                                                </small>
+                                                <span class="badge bg-{{ conf_class }} ms-2">{{ conf_pct }}%</span>
+                                            </div>
+                                        {% endfor %}
+                                        {% if mappings|length > 3 %}
+                                            <small class="text-muted">+{{ mappings|length - 3 }} more mappings</small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-secondary">No mappings</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('crawler.view_crawled_page', id=page.id) }}" 
+                                       class="btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ page.url }}" target="_blank" 
+                                       class="btn btn-outline-secondary" title="Visit Page">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('crawler.recrawl_page', id=page.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                                title="Re-crawl this page"
+                                                onclick="return confirm('Re-crawl this page? This will update content and re-analyze mappings.')">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if pages.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if pages.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('reports.content_analysis', page=pages.prev_num, slug=current_filters.slug, crawl_job=current_filters.crawl_job, persona=current_filters.persona) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pages.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pages.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('reports.content_analysis', page=page_num, slug=current_filters.slug, crawl_job=current_filters.crawl_job, persona=current_filters.persona) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pages.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('reports.content_analysis', page=pages.next_num, slug=current_filters.slug, crawl_job=current_filters.crawl_job, persona=current_filters.persona) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+{% else %}
+    <!-- No Data State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                    <h3 class="mt-3">No Crawled Pages Found</h3>
+                    <p class="text-muted mb-4">Start crawling websites to see content analysis and persona mappings.</p>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Crawl Job
+                        </a>
+                        <a href="{{ url_for('personas.create_persona') }}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Create Persona
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Additional Insights -->
+{% if method_distribution %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Mapping Method Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for method in method_distribution %}
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center">
+                            <h4>{{ method.count }}</h4>
+                            <p class="mb-1">{{ method.mapping_method|title }} Method</p>
+                            <small class="text-muted">Avg: {{ (method.avg_confidence * 100)|round(1) if method.avg_confidence else 0 }}% confidence</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

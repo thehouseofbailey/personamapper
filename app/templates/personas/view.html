@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ persona.title }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-person"></i> {{ persona.title }}</h1>
+                <p class="text-muted">Persona details and content mappings</p>
+            </div>
+            <div>
+                <a href="{{ url_for('personas.edit_persona', id=persona.id) }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{{ url_for('personas.list_personas') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Personas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Persona Details -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle"></i> Persona Details
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Title:</strong>
+                        <p>{{ persona.title }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Created:</strong>
+                        <p>{{ persona.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p>{{ persona.description }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Keywords:</strong>
+                    <div class="mt-2">
+                        {% for keyword in persona.get_keywords_list() %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ keyword }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Mappings -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Content Mappings
+                </h5>
+                <span class="badge bg-primary">{{ mappings|length }} mappings</span>
+            </div>
+            <div class="card-body">
+                {% if mappings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Page Title</th>
+                                    <th>URL</th>
+                                    <th>Confidence</th>
+                                    <th>Mapped</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mapping in mappings %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ mapping.page.title or 'Untitled' }}</strong>
+                                        {% if mapping.page.word_count %}
+                                            <br><small class="text-muted">{{ mapping.page.word_count }} words</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ mapping.page.url }}" target="_blank" class="text-decoration-none">
+                                            {{ mapping.page.url[:50] }}{% if mapping.page.url|length > 50 %}...{% endif %}
+                                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% set confidence_class = 'success' if mapping.confidence_score >= 0.7 else 'warning' if mapping.confidence_score >= 0.4 else 'danger' %}
+                                        <span class="badge bg-{{ confidence_class }}">
+                                            {{ (mapping.confidence_score * 100)|round(1) }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ mapping.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#mappingModal{{ mapping.id }}">
+                                            <i class="bi bi-eye"></i> Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-diagram-3 display-4 text-muted"></i>
+                        <h5 class="mt-3">No Content Mappings</h5>
+                        <p class="text-muted">This persona hasn't been mapped to any content yet.</p>
+                        <a href="{{ url_for('crawler.list_crawl_jobs') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Start Crawling Content
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Statistics -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-graph-up"></i> Statistics
+                </h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ mappings|length }}</h4>
+                            <small class="text-muted">Total Mappings</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ high_confidence_count }}</h4>
+                        <small class="text-muted">High Confidence</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('personas.edit_persona', id=persona.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Persona
+                    </a>
+                    <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Create Crawl Job
+                    </a>
+                    <a href="{{ url_for('reports.persona_report', id=persona.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-earmark-text"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mapping Detail Modals -->
+{% for mapping in mappings %}
+<div class="modal fade" id="mappingModal{{ mapping.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mapping Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Page Title:</strong>
+                        <p>{{ mapping.page.title or 'Untitled' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Confidence Score:</strong>
+                        <p>{{ (mapping.confidence_score * 100)|round(1) }}%</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>URL:</strong>
+                    <p><a href="{{ mapping.page.url }}" target="_blank">{{ mapping.page.url }}</a></p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Mapping Reason:</strong>
+                    <p>{{ mapping.mapping_reason }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Method:</strong>
+                    <span class="badge bg-info">{{ mapping.mapping_method }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <p>{{ mapping.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

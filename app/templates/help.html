@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Documentation - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-question-circle"></i> Help & Documentation</h1>
+                <p class="text-muted">Learn how to use PersonaMap effectively</p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-rocket"></i> Quick Start Guide</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="bi bi-people fs-3"></i>
+                            </div>
+                            <h5 class="mt-2">1. Create Personas</h5>
+                            <p class="text-muted">Define your target user personas with detailed descriptions and keywords.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="bi bi-search fs-3"></i>
+                            </div>
+                            <h5 class="mt-2">2. Crawl Content</h5>
+                            <p class="text-muted">Set up crawl jobs to automatically extract content from websites.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="bi bi-graph-up fs-3"></i>
+                            </div>
+                            <h5 class="mt-2">3. Analyze Results</h5>
+                            <p class="text-muted">View reports and insights about how your content maps to personas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Documentation -->
+<div class="row">
+    <div class="col-md-6">
+        <!-- Personas Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-people"></i> Personas</h5>
+            </div>
+            <div class="card-body">
+                <h6>Creating Personas</h6>
+                <ul>
+                    <li>Click "Personas" in the navigation</li>
+                    <li>Click "Create New Persona"</li>
+                    <li>Fill in persona details and keywords</li>
+                    <li>Save to start using in content mapping</li>
+                </ul>
+                
+                <h6>Persona Keywords</h6>
+                <p>Keywords help the system automatically map content to personas. Use relevant terms that your target audience would search for or relate to.</p>
+                
+                <h6>Managing Personas</h6>
+                <ul>
+                    <li>Edit personas to refine keywords</li>
+                    <li>View persona mappings and confidence scores</li>
+                    {% if current_user.can_delete_personas() %}
+                    <li>Delete unused personas (Admin only)</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Crawler Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-search"></i> Web Crawler</h5>
+            </div>
+            <div class="card-body">
+                <h6>Setting Up Crawl Jobs</h6>
+                <ul>
+                    <li>Navigate to "Crawler" section</li>
+                    <li>Click "Create New Crawl Job"</li>
+                    <li>Enter website URL and configure settings</li>
+                    <li>Start crawling to extract content</li>
+                </ul>
+                
+                <h6>Crawl Modes</h6>
+                <ul>
+                    <li><strong>Sitemap:</strong> Fast discovery using XML sitemaps</li>
+                    <li><strong>Traditional:</strong> Follow links from starting page</li>
+                    <li><strong>Single Page:</strong> Crawl only the specified URL</li>
+                </ul>
+                
+                <h6>Managing Crawl Jobs</h6>
+                <ul>
+                    {% if current_user.can_create_crawls() %}
+                    <li>Start, stop, and monitor crawl progress</li>
+                    <li>Edit crawl job settings</li>
+                    {% endif %}
+                    <li>View crawled pages and content</li>
+                    {% if current_user.can_delete_crawls() %}
+                    <li>Delete completed crawl jobs (Admin only)</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <!-- Reports Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-graph-up"></i> Reports & Analytics</h5>
+            </div>
+            <div class="card-body">
+                <h6>Dashboard Overview</h6>
+                <p>The dashboard provides a quick overview of your PersonaMap system including persona counts, crawl jobs, and content mappings.</p>
+                
+                <h6>Content Analysis Report</h6>
+                <ul>
+                    <li>View all crawled pages and their persona mappings</li>
+                    <li>Filter by URL, crawl job, or persona mapping</li>
+                    <li>Export mapping data for external analysis</li>
+                    <li>See confidence scores for persona matches</li>
+                </ul>
+                
+                <h6>Persona Reports</h6>
+                <ul>
+                    <li>Analyze which personas have the most content</li>
+                    <li>Identify content gaps for specific personas</li>
+                    <li>View mapping confidence distributions</li>
+                </ul>
+            </div>
+        </div>
+
+        {% if current_user.can_manage_users() %}
+        <!-- User Management Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-people-fill"></i> User Management</h5>
+            </div>
+            <div class="card-body">
+                <h6>User Roles</h6>
+                <ul>
+                    <li><strong>Admin:</strong> Full system control, manage users</li>
+                    <li><strong>Editor:</strong> Create/edit content, run crawls</li>
+                    <li><strong>Viewer:</strong> Read-only access to all data</li>
+                </ul>
+                
+                <h6>Managing Users</h6>
+                <ul>
+                    <li>Add new users with appropriate roles</li>
+                    <li>Edit user information and permissions</li>
+                    <li>Reset user passwords</li>
+                    <li>Activate/deactivate user accounts</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-person-circle"></i> Account Management</h5>
+            </div>
+            <div class="card-body">
+                <h6>Profile Settings</h6>
+                <ul>
+                    <li>View your account information</li>
+                    <li>Change your password</li>
+                    <li>See your role and permissions</li>
+                </ul>
+                
+                <h6>Password Reset</h6>
+                <p>If you forget your password, use the "Forgot your password?" link on the login page to reset it via email.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-question-circle-fill"></i> Frequently Asked Questions</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>How do I improve persona mapping accuracy?</h6>
+                        <p>Add more specific keywords to your personas and ensure your persona descriptions are detailed and accurate.</p>
+                        
+                        <h6>Why are some pages not being crawled?</h6>
+                        <p>Check if the pages are blocked by robots.txt, require authentication, or are not linked from the starting URL.</p>
+                        
+                        <h6>Can I export my data?</h6>
+                        <p>Yes, use the "Export Mappings" button in the Content Analysis report to download your data as CSV.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>How often should I run crawls?</h6>
+                        <p>This depends on how frequently your website content changes. Weekly or monthly crawls are typical for most sites.</p>
+                        
+                        <h6>What happens if a crawl fails?</h6>
+                        <p>Check the crawl job status for error details. Common issues include network problems or website access restrictions.</p>
+                        
+                        <h6>How do I delete old data?</h6>
+                        <p>{% if current_user.can_delete_crawls() %}Admins can delete crawl jobs and their associated data from the crawler management page.{% else %}Contact your administrator to delete old crawl data.{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Support Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5><i class="bi bi-headset"></i> Need More Help?</h5>
+                <p class="mb-3">If you can't find what you're looking for in this documentation, we're here to help!</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <i class="bi bi-envelope-fill text-primary fs-2"></i>
+                            <h6 class="mt-2">Email Support</h6>
+                            <p class="text-muted">
+                                <a href="mailto:support@personamap.com" class="text-decoration-none">
+                                    support@personamap.com
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <i class="bi bi-book-fill text-success fs-2"></i>
+                            <h6 class="mt-2">Documentation</h6>
+                            <p class="text-muted">
+                                <a href="#" class="text-decoration-none">
+                                    View Full Documentation
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <i class="bi bi-people-fill text-info fs-2"></i>
+                            <h6 class="mt-2">Community</h6>
+                            <p class="text-muted">
+                                <a href="#" class="text-decoration-none">
+                                    Join User Community
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6>System Information</h6>
+                        <p class="text-muted mb-0">
+                            PersonaMap v1.0 | 
+                            Your Role: <span class="badge bg-{{ 'danger' if current_user.is_admin() else 'warning' if current_user.is_editor() else 'secondary' }}">{{ current_user.get_role_display() }}</span> | 
+                            Last Login: {{ current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

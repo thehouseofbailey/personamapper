@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title or 'Untitled' }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-file-earmark-text"></i> Page Details</h1>
+                <p class="text-muted">Crawled page information and persona mappings</p>
+            </div>
+            <a href="{{ url_for('crawler.view_crawl_job', id=page.crawl_job_id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Crawl Job
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Page Information -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle"></i> Page Information
+                </h5>
+                
+                <div class="mb-3">
+                    <strong>Title:</strong>
+                    <p>{{ page.title or 'Untitled' }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>URL:</strong>
+                    <p><a href="{{ page.url }}" target="_blank" class="text-decoration-none">
+                        {{ page.url }}
+                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    </a></p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Word Count:</strong>
+                        <p>{{ page.word_count or 0 }} words</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status Code:</strong>
+                        <p>
+                            {% if page.status_code == 200 %}
+                                <span class="badge bg-success">{{ page.status_code }} OK</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ page.status_code }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Crawled At:</strong>
+                        <p>{{ page.crawled_at.strftime('%B %d, %Y at %I:%M %p') if page.crawled_at else 'N/A' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Processing Status:</strong>
+                        <p>
+                            {% if page.is_processed %}
+                                <span class="badge bg-success">Processed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Preview -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-file-text"></i> Content Preview
+                </h5>
+                
+                {% if page.content %}
+                    <div class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                        <p class="mb-0">{{ page.content[:1000] }}{% if page.content|length > 1000 %}...{% endif %}</p>
+                    </div>
+                    {% if page.content|length > 1000 %}
+                        <small class="text-muted">Showing first 1000 characters of {{ page.content|length }} total</small>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No content available</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Historical Confidence Chart -->
+        {% if has_historical_data and chart_data %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Persona Confidence History
+                </h5>
+                <small class="text-muted">How persona mappings have changed over time</small>
+            </div>
+            <div class="card-body">
+                <canvas id="confidenceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Current Persona Mappings -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Current Persona Mappings
+                </h5>
+                <span class="badge bg-primary">{{ mappings|length }} active mappings</span>
+            </div>
+            <div class="card-body">
+                {% if mappings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Persona</th>
+                                    <th>Confidence</th>
+                                    <th>Method</th>
+                                    <th>Reason</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mapping in mappings %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('personas.view_persona', id=mapping.persona_id) }}" class="text-decoration-none">
+                                            <strong>{{ mapping.persona.title }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% set confidence_class = 'success' if mapping.confidence_score >= 0.7 else 'warning' if mapping.confidence_score >= 0.4 else 'danger' %}
+                                        <span class="badge bg-{{ confidence_class }}">
+                                            {{ (mapping.confidence_score * 100)|round(1) }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ mapping.mapping_method }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ mapping.mapping_reason[:100] }}{% if mapping.mapping_reason and mapping.mapping_reason|length > 100 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ mapping.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-diagram-3 display-4 text-muted"></i>
+                        <h5 class="mt-3">No Persona Mappings</h5>
+                        <p class="text-muted">This page hasn't been mapped to any personas yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-graph-up"></i> Quick Stats
+                </h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ mappings|length }}</h4>
+                            <small class="text-muted">Mappings</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ page.word_count or 0 }}</h4>
+                        <small class="text-muted">Words</small>
+                    </div>
+                </div>
+                {% if mappings %}
+                <div class="row text-center mt-3">
+                    <div class="col-12">
+                        <h4 class="text-info">{{ ((mappings|map(attribute='confidence_score')|sum / mappings|length) * 100)|round(1) }}%</h4>
+                        <small class="text-muted">Avg Confidence</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Related Information -->
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-link-45deg"></i> Related Information
+                </h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('crawler.view_crawl_job', id=page.crawl_job_id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-collection"></i> View Crawl Job
+                    </a>
+                    <a href="{{ page.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-arrow-up-right"></i> Visit Original Page
+                    </a>
+                    <form method="POST" action="{{ url_for('crawler.recrawl_page', id=page.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-warning btn-sm w-100" 
+                                onclick="return confirm('Are you sure you want to re-crawl this page? This will update the content and re-analyze persona mappings.')">
+                            <i class="bi bi-arrow-clockwise"></i> Re-crawl Page
+                        </button>
+                    </form>
+                    {% if mappings %}
+                        <a href="{{ url_for('personas.list_personas') }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-people"></i> View All Personas
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if has_historical_data and chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart data from backend
+    const chartData = {{ chart_data|tojson }};
+    
+    // Generate colors for each persona
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+    ];
+    
+    // Prepare datasets for Chart.js
+    const datasets = [];
+    let colorIndex = 0;
+    
+    for (const [personaTitle, dataPoints] of Object.entries(chartData)) {
+        const color = colors[colorIndex % colors.length];
+        
+        datasets.push({
+            label: personaTitle,
+            data: dataPoints,
+            borderColor: color,
+            backgroundColor: color + '20',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: color,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+        });
+        
+        colorIndex++;
+    }
+    
+    // Create the chart
+    const ctx = document.getElementById('confidenceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        displayFormats: {
+                            hour: 'MMM dd HH:mm',
+                            day: 'MMM dd',
+                            week: 'MMM dd',
+                            month: 'MMM yyyy'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Crawl Time'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Confidence Score (%)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Persona Confidence Over Time'
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            const personaTitle = context.dataset.label;
+                            const confidence = context.parsed.y;
+                            const isActive = context.raw.is_active;
+                            const status = isActive ? ' (Current)' : ' (Historical)';
+                            return personaTitle + ': ' + confidence + '%' + status;
+                        },
+                        title: function(tooltipItems) {
+                            if (tooltipItems.length > 0) {
+                                const date = new Date(tooltipItems[0].parsed.x);
+                                return 'Crawled: ' + date.toLocaleString();
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+    
+    // Set chart height
+    document.getElementById('confidenceChart').style.height = '300px';
+});
+</script>
+{% endif %}
+{% endblock %}

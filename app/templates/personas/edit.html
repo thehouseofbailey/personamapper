@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ persona.title }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-pencil"></i> Edit Persona</h1>
+                <p class="text-muted">Update persona details and keywords</p>
+            </div>
+            <div>
+                <a href="{{ url_for('personas.view_persona', id=persona.id) }}" class="btn btn-outline-info me-2">
+                    <i class="bi bi-eye"></i> View
+                </a>
+                <a href="{{ url_for('personas.list_personas') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Personas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">A clear, descriptive name for this persona</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Detailed description of this persona's characteristics and behaviors</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.keywords.label(class="form-label") }}
+                        {{ form.keywords(class="form-control" + (" is-invalid" if form.keywords.errors else ""), rows="3") }}
+                        {% if form.keywords.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.keywords.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Comma-separated keywords that identify content relevant to this persona</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('personas.view_persona', id=persona.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Persona
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle"></i> Persona Info
+                </h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ persona.get_mapping_count() }}</h5>
+                            <small class="text-muted">Content Mappings</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success">{{ persona.created_at.strftime('%b %Y') }}</h5>
+                        <small class="text-muted">Created</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Editing Tips
+                </h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Keywords:</strong> Use specific terms your audience searches for
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Description:</strong> Include behaviors and motivations
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Updates:</strong> Changes will affect future content mappings
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Danger Zone
+                </h6>
+                <p class="small text-muted">
+                    Permanently delete this persona and all its content mappings.
+                </p>
+                <form method="POST" action="{{ url_for('personas.delete_persona', id=persona.id) }}" 
+                      onsubmit="return confirmDelete('Are you sure you want to delete this persona? This action cannot be undone.')">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i> Delete Persona
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

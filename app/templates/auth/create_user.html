@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Create User - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-person-plus"></i> Create New User</h1>
+                <p class="text-muted">Add a new user to the system</p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('auth.manage_users') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge"></i> User Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.create_user') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ request.form.get('username', '') }}" required minlength="3">
+                            <div class="form-text">Must be at least 3 characters long and unique</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ request.form.get('email', '') }}" required>
+                            <div class="form-text">Must be a valid email address</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   required minlength="6">
+                            <div class="form-text">Must be at least 6 characters long</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Select a role...</option>
+                                {% for role_value, role_display in roles %}
+                                    <option value="{{ role_value }}" 
+                                            {% if request.form.get('role') == role_value %}selected{% endif %}>
+                                        {{ role_display }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Determines user permissions</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                   {% if request.form.get('is_active') or not request.form %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Active User
+                            </label>
+                            <div class="form-text">Inactive users cannot log in</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('auth.manage_users') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Role Permissions Info -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Role Permissions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-danger">Admin</h6>
+                        <ul class="small">
+                            <li>Full system control</li>
+                            <li>Manage users</li>
+                            <li>Create/edit/delete crawls</li>
+                            <li>Create/edit/delete personas</li>
+                            <li>View all reports</li>
+                            <li>Export data</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-warning">Editor</h6>
+                        <ul class="small">
+                            <li>Create and run crawls</li>
+                            <li>Create and edit personas</li>
+                            <li>View all reports</li>
+                            <li>Export data</li>
+                            <li><em>Cannot manage users</em></li>
+                            <li><em>Cannot delete personas/crawls</em></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-secondary">Viewer</h6>
+                        <ul class="small">
+                            <li>View crawls and reports</li>
+                            <li>View personas</li>
+                            <li>Export data</li>
+                            <li><em>Cannot create/edit anything</em></li>
+                            <li><em>Cannot run crawls</em></li>
+                            <li><em>Cannot manage users</em></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const username = document.getElementById('username');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    
+    // Username validation
+    username.addEventListener('input', function() {
+        if (this.value.length < 3) {
+            this.setCustomValidity('Username must be at least 3 characters long');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Email validation
+    email.addEventListener('input', function() {
+        if (!this.value.includes('@')) {
+            this.setCustomValidity('Please enter a valid email address');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Password validation
+    password.addEventListener('input', function() {
+        if (this.value.length < 6) {
+            this.setCustomValidity('Password must be at least 6 characters long');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}
