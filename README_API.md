@@ -2,7 +2,7 @@
 
 ## Overview
 
-I've successfully implemented a lightweight, secure, read-only API interface for your PersonaMap application. This API is designed specifically for JavaScript integration via Google Tag Manager and provides two main functions:
+This API is designed specifically for JavaScript integration via Google Tag Manager and provides two main functions:
 
 1. **Retrieve personas matched to a page**
 2. **Track user visits and predict personas based on session data**
