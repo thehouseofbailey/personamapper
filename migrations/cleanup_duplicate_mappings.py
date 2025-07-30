@@ -8,7 +8,7 @@ from app import create_app, db
 from app.models import ContentMapping
 from sqlalchemy import func
 
-def cleanup_duplicate_mappings():
+def migrate_cleanup_duplicates():
     """Remove duplicate persona mappings, keeping the highest confidence one."""
     app = create_app()
     

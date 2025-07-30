@@ -1,13 +1,13 @@
 """
-Database migration script to add failure tracking fields to crawl_urls table.
-Run this script to update the database schema.
+Database migration script to add crawl_timestamp field to content_mappings table.
+Run this script to update the database schema for historical tracking.
 """
 
 import sqlite3
 import os
 
-def migrate_database():
-    """Add failure tracking fields to crawl_urls table."""
+def migrate_add_crawl_timestamp():
+    """Add crawl_timestamp field to content_mappings table."""
     
     # Get database path
     db_path = os.path.join('instance', 'personamap.db')
@@ -21,29 +21,27 @@ def migrate_database():
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Check if columns already exist
-        cursor.execute("PRAGMA table_info(crawl_urls)")
+        # Check if column already exists
+        cursor.execute("PRAGMA table_info(content_mappings)")
         columns = [column[1] for column in cursor.fetchall()]
         
-        # Add new columns if they don't exist
-        if 'failed_attempts' not in columns:
-            print("Adding failed_attempts column...")
-            cursor.execute("ALTER TABLE crawl_urls ADD COLUMN failed_attempts INTEGER DEFAULT 0 NOT NULL")
-        
-        if 'is_failed' not in columns:
-            print("Adding is_failed column...")
-            cursor.execute("ALTER TABLE crawl_urls ADD COLUMN is_failed BOOLEAN DEFAULT 0 NOT NULL")
-        
-        if 'last_error' not in columns:
-            print("Adding last_error column...")
-            cursor.execute("ALTER TABLE crawl_urls ADD COLUMN last_error TEXT")
+        # Add new column if it doesn't exist
+        if 'crawl_timestamp' not in columns:
+            print("Adding crawl_timestamp column...")
+            cursor.execute("ALTER TABLE content_mappings ADD COLUMN crawl_timestamp DATETIME")
+            
+            # Set crawl_timestamp to created_at for existing records
+            print("Setting crawl_timestamp for existing records...")
+            cursor.execute("UPDATE content_mappings SET crawl_timestamp = created_at WHERE crawl_timestamp IS NULL")
+        else:
+            print("crawl_timestamp column already exists")
         
         # Commit changes
         conn.commit()
         print("Migration completed successfully!")
         
         # Show updated table structure
-        cursor.execute("PRAGMA table_info(crawl_urls)")
+        cursor.execute("PRAGMA table_info(content_mappings)")
         columns = cursor.fetchall()
         print("\nUpdated table structure:")
         for column in columns:
@@ -65,7 +63,7 @@ if __name__ == "__main__":
     
     if success:
         print("\n✅ Migration completed successfully!")
-        print("The crawl_urls table now includes failure tracking fields.")
+        print("The content_mappings table now includes crawl_timestamp for historical tracking.")
     else:
         print("\n❌ Migration failed!")
         print("Please check the error messages above.")

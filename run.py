@@ -10,7 +10,11 @@ import os
 from app import create_app, db
 from app.models import User, Persona, CrawlJob, CrawledPage, ContentMapping
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = create_app()
+print("Database URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
 
 @app.shell_context_processor
 def make_shell_context():
@@ -27,60 +31,48 @@ def make_shell_context():
 @app.cli.command()
 def init_db():
     """Initialize the database with sample data."""
-    db.create_all()
-    
-    # Create default admin user if it doesn't exist
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(
-            username='admin',
-            email='admin@personamap.local',
-            role='admin'
-        )
-        admin.set_password('admin123')  # Change this in production!
-        db.session.add(admin)
-        
-        print("Created default admin user:")
-        print("Username: admin")
-        print("Password: admin123")
-        print("Please change the password after first login!")
-    
-    # Create sample personas
-    if Persona.query.count() == 0:
-        sample_personas = [
-            {
-                'title': 'Tech Enthusiast',
-                'description': 'Early adopters who are interested in the latest technology trends, gadgets, and innovations.',
-                'keywords': 'technology, innovation, gadgets, AI, software, hardware, tech news, startups'
-            },
-            {
-                'title': 'Business Professional',
-                'description': 'Working professionals focused on career growth, business strategies, and industry insights.',
-                'keywords': 'business, career, professional development, leadership, strategy, management, productivity'
-            },
-            {
-                'title': 'Content Creator',
-                'description': 'Individuals who create and share content across various platforms and are interested in creative tools and techniques.',
-                'keywords': 'content creation, social media, blogging, video, photography, design, creative tools'
-            }
-        ]
-        
-        for persona_data in sample_personas:
-            persona = Persona(**persona_data)
-            db.session.add(persona)
-        
-        print("Created sample personas")
-    
-    db.session.commit()
-    print("Database initialized successfully!")
+    with app.app_context():
+        print("Running init_db...")
+        db.create_all()
+
+        # Run migrations
+        from migrations.migrate_user_roles import migrate_user_roles
+        from migrations.add_crawl_timestamp_to_content_mappings import migrate_add_crawl_timestamp
+        from migrations.add_failure_tracking_to_crawl_urls import migrate_add_failure_tracking
+        from migrations.cleanup_duplicate_mappings import migrate_cleanup_duplicates
+        from migrations.create_crawl_urls_table import migrate_create_crawl_urls_table
+        from migrations.migrate_crawl_mode import migrate_crawl_mode
+
+        migrate_user_roles()
+        migrate_add_crawl_timestamp()
+        migrate_add_failure_tracking()
+        migrate_cleanup_duplicates()
+        migrate_create_crawl_urls_table()
+        migrate_crawl_mode()
+
+        admin = User.query.filter_by(username='admin').first()
+        print("Admin user found:", admin)
+        if not admin:
+            print("Creating admin user...")
+            admin = User(
+                username='admin',
+                email='admin@personamap.local',
+                role='admin'
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            print("Admin user added to session.")
+        db.session.commit()
+        print("Database initialized successfully!")
 
 if __name__ == '__main__':
-    # Set environment variables for development
-    os.environ.setdefault('FLASK_ENV', 'development')
-    os.environ.setdefault('FLASK_DEBUG', '1')
-    
-    print("Starting PersonaMap Application...")
-    print("Access the application at: http://localhost:5002")
-    print("Default admin credentials: admin / admin123")
-    
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    import sys
+    # Only start the server if no CLI command is given
+    if len(sys.argv) == 1:
+        os.environ.setdefault('FLASK_ENV', 'development')
+        os.environ.setdefault('FLASK_DEBUG', '1')
+        print("Starting PersonaMap Application...")
+        print("Access the application at: http://localhost:5002")
+        print("Default admin credentials: admin / admin123")
+        app.run(host='0.0.0.0', port=5002, debug=True)
+

@@ -6,7 +6,7 @@ Migration script to create the crawl_urls table.
 from app import create_app, db
 from app.models import CrawlUrl
 
-def create_crawl_urls_table():
+def migrate_create_crawl_urls_table():
     """Create the crawl_urls table."""
     app = create_app()
     

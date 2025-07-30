@@ -27,17 +27,22 @@ cd personamap
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# On Windows:
+venv\Scripts\activate
+# On Mac/Linux:
+# source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
-cp .env.example .env
+copy .env.example .env  # On Windows
+# cp .env.example .env  # On Mac/Linux
 # Edit .env with your settings
 
-# Initialize database
-python run.py init-db
+# Initialize database and run all migrations (this also creates the admin user)
+$env:FLASK_APP="run.py"; python -m flask init-db  # On Windows PowerShell
+# export FLASK_APP=run.py; flask init-db          # On Mac/Linux
 
 # Start application
 python run.py
@@ -45,11 +50,20 @@ python run.py
 
 Visit `http://localhost:5002` with credentials: `admin` / `admin123`
 
+---
+
+**Notes:**
+- You no longer need to run migration scripts separately; `flask init-db` runs all migrations and creates the admin user.
+- Always use the `FLASK_APP` environment variable when running CLI commands.
+- Change the default admin password after first login!
+
+---
+
 ## 🐳 Docker Deployment
 
 ### Development with Docker
 ```bash
-# Build and start
+# Build and start (runs migrations and creates admin user automatically)
 docker-compose up -d
 
 # View logs
@@ -58,6 +72,15 @@ docker-compose logs -f personamap
 # Stop services
 docker-compose down
 ```
+
+**The Docker entrypoint should run:**
+```bash
+$env:FLASK_APP="run.py"; python -m flask init-db
+python run.py
+```
+*(Or the Linux equivalent in your Dockerfile/entrypoint script)*
+
+---
 
 ### Production Docker Setup
 ```bash
@@ -77,6 +100,8 @@ docker run -d \
   personamap:latest
 ```
 
+---
+
 ### Docker with PostgreSQL
 ```bash
 # Start with PostgreSQL
@@ -85,6 +110,15 @@ docker-compose --profile postgres up -d
 # Update DATABASE_URL in .env
 DATABASE_URL=postgresql://personamap:personamap_password@postgres:5432/personamap
 ```
+
+---
+
+**Tips:**
+- Ensure your Dockerfile or entrypoint runs `flask init-db` before starting the app.
+- For production, always change the default admin password and use a strong `SECRET_KEY`.
+- For persistent data, use Docker volumes for the database.
+
+---
 
 ## 🚀 Production Deployment
 

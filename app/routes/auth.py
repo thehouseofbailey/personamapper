@@ -23,27 +23,26 @@ def login():
             return render_template('auth/login.html')
         
         user = User.query.filter_by(username=username).first()
-        
-        if user is None or not user.check_password(password):
+        if user and user.check_password(password):
+            if not user.is_active:
+                flash('Your account has been deactivated. Please contact an administrator.', 'error')
+                return render_template('auth/login.html')
+            
+            login_user(user, remember=remember_me)
+            
+            # Update last login time
+            user.update_last_login()
+            
+            # Redirect to the page the user was trying to access
+            next_page = request.args.get('next')
+            if not next_page or url_parse(next_page).netloc != '':
+                next_page = url_for('main.dashboard')
+            
+            flash(f'Welcome back, {user.username}!', 'success')
+            return redirect(next_page)
+        else:
             flash('Invalid username or password.', 'error')
             return render_template('auth/login.html')
-        
-        if not user.is_active:
-            flash('Your account has been deactivated. Please contact an administrator.', 'error')
-            return render_template('auth/login.html')
-        
-        login_user(user, remember=remember_me)
-        
-        # Update last login time
-        user.update_last_login()
-        
-        # Redirect to the page the user was trying to access
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('main.dashboard')
-        
-        flash(f'Welcome back, {user.username}!', 'success')
-        return redirect(next_page)
     
     return render_template('auth/login.html')
 
