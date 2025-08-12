@@ -39,6 +39,12 @@ PersonaMap is an AI-powered web content analysis platform that automatically map
 git clone https://github.com/yourusername/personamap.git
 cd personamap
 ```
+### Note: you may need to setup a virtual environment first
+Example for Mint Linux
+sudo apt update
+sudo apt install python3-venv
+python3 -m venv .venv
+source .venv/bin/activate
 
 ### 2. Install Dependencies
 ```bash
@@ -51,9 +57,9 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-### 4. Initialize Database
+### 4. Initialize Database and Create Admin User
 ```bash
-python run.py init-db
+export FLASK_APP=run.py; flask init-db
 ```
 
 ### 5. Start the Application
