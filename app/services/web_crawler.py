@@ -160,20 +160,20 @@ class WebCrawler:
         """Check if URL should be crawled based on patterns and rules."""
         if not url or url in self.visited_urls:
             return False
-        
+
         # Check if URL matches base domain
         base_domain = urlparse(self.crawl_job.base_url).netloc
         url_domain = urlparse(url).netloc
         if url_domain != base_domain:
             return False
-        
+
         # Check if URL already exists in database (for incremental mode)
         if self.crawl_job.crawl_mode == 'incremental':
             existing_page = CrawledPage.query.filter_by(url=url).first()
             if existing_page:
                 logger.info(f"Skipping already crawled URL in incremental mode: {url}")
                 return False
-        
+
         # Check include patterns
         if self.crawl_job.include_patterns:
             patterns = [p.strip() for p in self.crawl_job.include_patterns.split('\n') if p.strip()]
@@ -181,14 +181,27 @@ class WebCrawler:
                 matches = any(self.match_pattern(url, pattern) for pattern in patterns)
                 if not matches:
                     return False
-        
-        # Check exclude patterns
+
+        # Check exclude patterns (now checks both path and query string)
         if self.crawl_job.exclude_patterns:
             patterns = [p.strip() for p in self.crawl_job.exclude_patterns.split('\n') if p.strip()]
+            parsed = urlparse(url)
+            query_params = parse_qs(parsed.query)
             for pattern in patterns:
-                if self.match_pattern(url, pattern):
+                # Check path
+                if self.match_pattern(parsed.path, pattern):
                     return False
-        
+                # Check query string (raw)
+                if self.match_pattern(parsed.query, pattern):
+                    return False
+                # Check query parameters individually for patterns like 'share=*'
+                if '=' in pattern:
+                    key, value = pattern.split('=', 1)
+                    for param_key, param_values in query_params.items():
+                        if self.match_pattern(param_key, key):
+                            for param_value in param_values:
+                                if self.match_pattern(param_value, value):
+                                    return False
         return True
     
     def match_pattern(self, url: str, pattern: str) -> bool:
@@ -234,13 +247,23 @@ class WebCrawler:
                 if not matches:
                     return False
         
-        # Check exclude patterns
+        # Check exclude patterns (now checks both path and query string)
         if self.crawl_job.exclude_patterns:
             patterns = [p.strip() for p in self.crawl_job.exclude_patterns.split('\n') if p.strip()]
+            parsed = urlparse(url)
+            query_params = parse_qs(parsed.query)
             for pattern in patterns:
-                if self.match_pattern(url, pattern):
+                if self.match_pattern(parsed.path, pattern):
                     return False
-        
+                if self.match_pattern(parsed.query, pattern):
+                    return False
+                if '=' in pattern:
+                    key, value = pattern.split('=', 1)
+                    for param_key, param_values in query_params.items():
+                        if self.match_pattern(param_key, key):
+                            for param_value in param_values:
+                                if self.match_pattern(param_value, value):
+                                    return False
         return True
     
     def extract_content(self, soup: BeautifulSoup, url: str) -> Dict:
@@ -526,10 +549,22 @@ class WebCrawler:
                 for i, crawl_url in enumerate(urls_to_crawl):
                     if self.should_stop:
                         break
-                    
+
                     url = crawl_url.url
+
+                    # Skip and DELETE URLs matching exclude patterns
+                    if not self.should_crawl_url(url):
+                        logger.info(f"Deleting excluded URL from crawl queue: {url}")
+                        try:
+                            db.session.delete(crawl_url)
+                            db.session.commit()
+                        except Exception as e:
+                            logger.error(f"Error deleting excluded URL {url}: {e}")
+                            db.session.rollback()
+                        continue
+
                     logger.info(f"Crawling URL {i+1}/{len(urls_to_crawl)}: {url}")
-                    
+
                     # Crawl the page
                     success, error_message = self.crawl_page_from_sitemap(url)
                     

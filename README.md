@@ -44,14 +44,14 @@ Example for Mint Linux
 sudo apt update
 sudo apt install python3-venv
 python3 -m venv .venv
-source .venv/bin/activate
+
 
 ### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment
+### 3. Configure Environmentsource .venv/bin/activate
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
