@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ website.name }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-globe"></i> {{ website.name }}
+                    {% if website.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('websites.list_websites') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Websites
+                    </a>
+                    {% if current_user.can_manage_website(website.id) %}
+                    <a href="{{ url_for('websites.edit_website', id=website.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    {% endif %}
+                    {% if current_user.is_super_admin %}
+                    <a href="{{ url_for('websites.manage_organisations', id=website.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-diagram-3"></i> Manage Organisations
+                    </a>
+                    <a href="{{ url_for('websites.manage_website_users', id=website.id) }}" class="btn btn-outline-warning">
+                        <i class="bi bi-people"></i> Manage Users
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Website Info -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Website Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Domain:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    <a href="{{ website.domain }}" target="_blank" class="text-decoration-none">
+                                        {{ website.domain }} <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <hr>
+                            {% if website.description %}
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Description:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ website.description }}
+                                </div>
+                            </div>
+                            <hr>
+                            {% endif %}
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Created:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ website.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Last Updated:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ website.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Quick Stats</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h4 class="text-primary">{{ organisations|length }}</h4>
+                                        <small class="text-muted">Organisations</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-info">{{ users|length }}</h4>
+                                    <small class="text-muted">Users</small>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h4 class="text-success">{{ crawl_jobs|length }}</h4>
+                                        <small class="text-muted">Crawl Jobs</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-warning">{{ personas|length }}</h4>
+                                    <small class="text-muted">Personas</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Organisations -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Organisations</h5>
+                            {% if current_user.is_super_admin %}
+                            <a href="{{ url_for('websites.manage_organisations', id=website.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-gear"></i> Manage
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if organisations %}
+                            <div class="list-group list-group-flush">
+                                {% for org in organisations %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ org.name }}</strong>
+                                        {% if org.description %}
+                                        <br><small class="text-muted">{{ org.description[:50] }}{% if org.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if org.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No organisations assigned</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-people"></i> Users</h5>
+                            {% if current_user.is_super_admin %}
+                            <a href="{{ url_for('websites.manage_website_users', id=website.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-gear"></i> Manage
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if users %}
+                            <div class="list-group list-group-flush">
+                                {% for user in users[:5] %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ user.username }}</strong>
+                                        <br><small class="text-muted">{{ user.email }}</small>
+                                    </div>
+                                    <span class="badge bg-primary">{{ user.get_website_role(website.id) or 'Viewer' }}</span>
+                                </div>
+                                {% endfor %}
+                                {% if users|length > 5 %}
+                                <div class="list-group-item text-center">
+                                    <small class="text-muted">... and {{ users|length - 5 }} more users</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No users assigned</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crawl Jobs and Personas -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-search"></i> Recent Crawl Jobs</h5>
+                            <div class="btn-group" role="group">
+                                {% if current_user.can_manage_website(website.id) %}
+                                <a href="{{ url_for('crawler.create_crawl_job', website_id=website.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus"></i> New Crawl
+                                </a>
+                                <a href="{{ url_for('websites.website_crawls', id=website.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-gear"></i> Manage Crawls
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if crawl_jobs %}
+                            <div class="list-group list-group-flush">
+                                {% for job in crawl_jobs[:5] %}
+                                <a href="{{ url_for('crawler.view_crawl_job', id=job.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ job.name }}</strong>
+                                        <br><small class="text-muted">{{ job.base_url[:50] }}{% if job.base_url|length > 50 %}...{% endif %}</small>
+                                        <br><small class="text-muted">{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ 'success' if job.status == 'completed' else 'warning' if job.status == 'running' else 'danger' }}">
+                                        {{ job.status }}
+                                    </span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            <div class="card-footer text-center">
+                                <a href="{{ url_for('websites.website_crawls', id=website.id) }}" class="text-decoration-none">
+                                    View all {{ crawl_jobs|length }} crawl jobs <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No crawl jobs yet</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Recent Personas</h5>
+                            {% if current_user.can_manage_website(website.id) %}
+                            <a href="{{ url_for('personas.create_persona', website_id=website.id) }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-plus"></i> New Persona
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if personas %}
+                            <div class="list-group list-group-flush">
+                                {% for persona in personas[:5] %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ persona.name }}</strong>
+                                        {% if persona.description %}
+                                        <br><small class="text-muted">{{ persona.description[:40] }}{% if persona.description|length > 40 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ persona.created_at.strftime('%m/%d') }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No personas yet</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

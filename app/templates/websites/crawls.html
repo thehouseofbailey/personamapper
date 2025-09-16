@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Crawl Jobs - {{ website.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-search text-primary"></i>
+                        Crawl Jobs
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <a href="{{ url_for('websites.list_websites') }}" class="text-decoration-none">Websites</a>
+                        <i class="bi bi-chevron-right mx-2"></i>
+                        <a href="{{ url_for('websites.view_website', id=website.id) }}" class="text-decoration-none">{{ website.name }}</a>
+                        <i class="bi bi-chevron-right mx-2"></i>
+                        Crawl Jobs
+                    </p>
+                </div>
+                <div>
+                    {% if current_user.can_manage_website(website.id) %}
+                    <a href="{{ url_for('crawler.create_crawl_job', website_id=website.id) }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> New Crawl Job
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('websites.view_website', id=website.id) }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Website
+                    </a>
+                </div>
+            </div>
+
+            <!-- Website Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">{{ website.name }}</h5>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-globe"></i> 
+                                <a href="{{ website.domain }}" target="_blank" class="text-decoration-none">
+                                    {{ website.domain }} <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="text-muted">
+                                <small>Organizations: 
+                                    {% for org in organisations %}
+                                        <span class="badge bg-light text-dark">{{ org.name }}</span>
+                                    {% endfor %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crawl Jobs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-search"></i> All Crawl Jobs
+                        <span class="badge bg-secondary ms-2">{{ crawl_jobs|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if crawl_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Base URL</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Started</th>
+                                    <th>Completed</th>
+                                    <th>Pages Found</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in crawl_jobs %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('crawler.view_crawl_job', id=job.id) }}" class="text-decoration-none">
+                                            {{ job.name }}
+                                        </a>
+                                        <br><small class="text-muted">{{ job.base_url[:60] }}{% if job.base_url|length > 60 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if job.status == 'completed' else 'warning' if job.status == 'running' else 'primary' if job.status == 'pending' else 'danger' }}">
+                                            {{ job.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        {% if job.started_at %}
+                                        <small>{{ job.started_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                        <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.completed_at %}
+                                        <small>{{ job.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                        <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ job.pages_found or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('crawler.view_crawl_job', id=job.id) }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if current_user.can_manage_website(website.id) and job.status in ['pending', 'failed'] %}
+                                            <form method="POST" action="{{ url_for('crawler.delete_crawl_job', id=job.id) }}" class="d-inline" 
+                                                  onsubmit="return confirm('Are you sure you want to delete this crawl job?')">
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <h5 class="mt-3">No Crawl Jobs Yet</h5>
+                        <p class="text-muted">
+                            No crawl jobs have been created for this website yet.
+                        </p>
+                        {% if current_user.can_manage_website(website.id) %}
+                        <a href="{{ url_for('crawler.create_crawl_job', website_id=website.id) }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create First Crawl Job
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

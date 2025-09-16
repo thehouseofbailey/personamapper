@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Create Organisation - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-plus-circle"></i> Create Organisation</h1>
+                <a href="{{ url_for('organisations.list_organisations') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Organisations
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Organisation Name</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           required maxlength="200" 
+                                           placeholder="e.g., Acme Corporation">
+                                    <div class="form-text">A unique name for this organisation</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" 
+                                              rows="3" placeholder="Brief description of this organisation..."></textarea>
+                                    <div class="form-text">Optional description of the organisation</div>
+                                </div>
+
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        Active
+                                    </label>
+                                    <div class="form-text">Whether this organisation is currently active</div>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{{ url_for('organisations.list_organisations') }}" class="btn btn-secondary me-md-2">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i> Create Organisation
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> What happens next?</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>After creating the organisation, you can:</p>
+                            <ul>
+                                <li><strong>Add users</strong> - Assign users to the organisation with specific roles</li>
+                                <li><strong>Create websites</strong> - Add websites that belong to this organisation</li>
+                                <li><strong>Manage permissions</strong> - Control what users can access</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Websites - {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-globe text-primary"></i>
+                        Manage Websites
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <a href="{{ url_for('organisations.list_organisations') }}" class="text-decoration-none">Organisations</a>
+                        <i class="bi bi-chevron-right mx-2"></i>
+                        <a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}" class="text-decoration-none">{{ organisation.name }}</a>
+                        <i class="bi bi-chevron-right mx-2"></i>
+                        Websites
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignWebsiteModal">
+                        <i class="bi bi-plus-circle"></i> Assign Website
+                    </button>
+                </div>
+            </div>
+
+            <!-- Organisation Websites -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-globe"></i> Organisation Websites
+                        <span class="badge bg-secondary ms-2">{{ organisation_websites|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if organisation_websites %}
+                    <div class="row">
+                        {% for org_website in organisation_websites %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h6 class="card-title mb-0">
+                                            <a href="{{ url_for('websites.view_website', id=org_website.website.id) }}" 
+                                               class="text-decoration-none">
+                                                {{ org_website.website.name }}
+                                            </a>
+                                        </h6>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('websites.view_website', id=org_website.website.id) }}">
+                                                        <i class="bi bi-eye"></i> View Website
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form style="display: inline;" method="POST" 
+                                                          action="{{ url_for('organisations.remove_website', id=organisation.id, website_id=org_website.website.id) }}"
+                                                          onsubmit="return confirm('Are you sure you want to unassign {{ org_website.website.name }} from this organisation?')">
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="bi bi-x-circle"></i> Unassign
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="card-text text-muted small mb-2">
+                                        <i class="bi bi-link-45deg"></i> {{ org_website.website.domain }}
+                                    </p>
+                                    
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="fw-bold">{{ org_website.website.get_crawl_jobs()|length }}</div>
+                                            <small class="text-muted">Crawls</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold">{{ org_website.website.get_personas()|length }}</div>
+                                            <small class="text-muted">Personas</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold">{{ org_website.website.get_content_mappings()|length }}</div>
+                                            <small class="text-muted">Mappings</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr class="my-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> 
+                                        Added {{ org_website.created_at.strftime('%b %d, %Y') if org_website.created_at else '-' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-globe display-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No Websites</h4>
+                        <p class="text-muted">This organisation doesn't have any websites assigned yet.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignWebsiteModal">
+                            <i class="bi bi-plus-circle"></i> Assign First Website
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Assign Website Modal -->
+<div class="modal fade" id="assignWebsiteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('organisations.add_website', id=organisation.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Website to Organisation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Website</label>
+                        <select name="website_id" class="form-select" required>
+                            <option value="">Choose a website...</option>
+                            {% for website in available_websites %}
+                            <option value="{{ website.id }}">{{ website.name }} ({{ website.domain }})</option>
+                            {% endfor %}
+                        </select>
+                        {% if not available_websites %}
+                        <small class="form-text text-muted">
+                            No websites available to assign. <a href="{{ url_for('websites.create_website') }}">Create a new website</a> first.
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" {% if not available_websites %}disabled{% endif %}>
+                        Assign Website
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

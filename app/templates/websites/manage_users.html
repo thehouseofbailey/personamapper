@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - {{ website.name }} - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-people"></i> Manage Users - {{ website.name }}</h1>
+                <a href="{{ url_for('websites.view_website', id=website.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Website
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Assigned Users -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-check-circle"></i> Assigned Users ({{ assigned_users|length }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if assigned_users %}
+                            <div class="list-group">
+                                {% for user in assigned_users %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ user.username }}</strong>
+                                            <br><small class="text-muted">{{ user.email }}</small>
+                                            <br><span class="badge bg-primary">{{ user.get_website_role(website.id) or 'Viewer' }}</span>
+                                        </div>
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="action" value="remove">
+                                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="return confirm('Remove {{ user.username }} from this website?')">
+                                                <i class="bi bi-x-circle"></i> Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-4">
+                                <i class="bi bi-info-circle"></i> No users assigned to this website yet.
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Users -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add Users</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if available_users %}
+                            <form method="POST">
+                                <input type="hidden" name="action" value="add">
+                                
+                                <div class="mb-3">
+                                    <label for="user_id" class="form-label">Select User</label>
+                                    <select class="form-select" id="user_id" name="user_id" required>
+                                        <option value="">Choose a user...</option>
+                                        {% for user in available_users %}
+                                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role</label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="website_viewer">Website Viewer</option>
+                                        <option value="website_manager">Website Manager</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <strong>Viewer:</strong> Can view content and reports<br>
+                                        <strong>Manager:</strong> Can create and edit crawl jobs and personas
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-plus-circle"></i> Add User
+                                    </button>
+                                </div>
+                            </form>
+                            {% else %}
+                            <p class="text-muted text-center py-4">
+                                <i class="bi bi-info-circle"></i> 
+                                {% if assigned_users %}
+                                All users are already assigned to this website.
+                                {% else %}
+                                No users available to assign.
+                                {% endif %}
+                            </p>
+                            {% endif %}
+
+                            <hr>
+
+                            <!-- Bulk Add by Organisation -->
+                            <div class="mt-4">
+                                <h6><i class="bi bi-diagram-3"></i> Add Users from Organisation</h6>
+                                <p class="text-muted small">Users from assigned organisations get automatic access. To add users from other organisations, first assign those organisations to this website.</p>
+                                <a href="{{ url_for('websites.manage_organisations', id=website.id) }}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-diagram-3"></i> Manage Organisations
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> User Role Permissions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-eye"></i> Website Viewer</h6>
+                                    <ul>
+                                        <li>View crawl jobs and their results</li>
+                                        <li>View personas and content mappings</li>
+                                        <li>Access reports and analytics</li>
+                                        <li>Cannot create or modify content</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-gear"></i> Website Manager</h6>
+                                    <ul>
+                                        <li>All viewer permissions</li>
+                                        <li>Create and edit crawl jobs</li>
+                                        <li>Create and edit personas</li>
+                                        <li>Manage website content</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="mb-0 mt-3"><strong>Note:</strong> Super admins have full access to all websites regardless of assignments.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

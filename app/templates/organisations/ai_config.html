@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}AI Configuration - {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('organisations.list_organisations') }}">Organisations</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}">{{ organisation.name }}</a></li>
+                    <li class="breadcrumb-item active">AI Configuration</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-cpu"></i> AI Configuration</h1>
+                <a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Organisation
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear"></i> AI Settings for {{ organisation.name }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" novalidate>
+                                {{ form.hidden_tag() }}
+                                
+                                <!-- Basic AI Settings -->
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Basic AI Settings</h6>
+                                    
+                                    <div class="form-check mb-3">
+                                        {{ form.ai_enabled(class="form-check-input") }}
+                                        {{ form.ai_enabled.label(class="form-check-label") }}
+                                        <div class="form-text">Enable AI-powered content analysis for this organisation</div>
+                                        {% for error in form.ai_enabled.errors %}
+                                            <div class="text-danger small">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        {{ form.ai_analysis_mode.label(class="form-label") }}
+                                        {{ form.ai_analysis_mode(class="form-select") }}
+                                        <div class="form-text">
+                                            <ul class="small mb-0">
+                                                <li><strong>Keyword:</strong> Traditional keyword matching only</li>
+                                                <li><strong>Local AI:</strong> Use local sentence transformers (free, no API required)</li>
+                                                <li><strong>OpenAI GPT:</strong> Use OpenAI's GPT models (requires API key)</li>
+                                                <li><strong>Hybrid:</strong> Combine keyword matching with AI analysis</li>
+                                                <li><strong>Validation:</strong> Use AI to validate keyword matches</li>
+                                            </ul>
+                                        </div>
+                                        {% for error in form.ai_analysis_mode.errors %}
+                                            <div class="text-danger small">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- OpenAI Configuration -->
+                                <div class="mb-4" id="openai-config">
+                                    <h6 class="border-bottom pb-2 mb-3">OpenAI Configuration</h6>
+                                    
+                                    <div class="mb-3">
+                                        {{ form.openai_api_key.label(class="form-label") }}
+                                        <div class="input-group">
+                                            {{ form.openai_api_key(class="form-control", placeholder="sk-...") }}
+                                            <span class="input-group-text">
+                                                {% if current_config.has_openai_key %}
+                                                    <i class="bi bi-check-circle text-success" title="API key configured"></i>
+                                                {% else %}
+                                                    <i class="bi bi-exclamation-circle text-warning" title="No API key configured"></i>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="form-text">
+                                            {% if current_config.has_openai_key %}
+                                                API key is configured. Leave blank to keep current key.
+                                            {% else %}
+                                                Required for OpenAI-based analysis modes. Get your key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI</a>.
+                                            {% endif %}
+                                        </div>
+                                        {% for error in form.openai_api_key.errors %}
+                                            <div class="text-danger small">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.openai_model.label(class="form-label") }}
+                                            {{ form.openai_model(class="form-select") }}
+                                            {% for error in form.openai_model.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.openai_max_tokens.label(class="form-label") }}
+                                            {{ form.openai_max_tokens(class="form-control") }}
+                                            <div class="form-text">Higher values allow longer responses but cost more</div>
+                                            {% for error in form.openai_max_tokens.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        {{ form.openai_temperature.label(class="form-label") }}
+                                        {{ form.openai_temperature(class="form-range", min="0", max="2", step="0.1") }}
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>0.0 (Deterministic)</span>
+                                            <span>Current: <span id="temp-value">{{ form.openai_temperature.data }}</span></span>
+                                            <span>2.0 (Creative)</span>
+                                        </div>
+                                        {% for error in form.openai_temperature.errors %}
+                                            <div class="text-danger small">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Cost Controls -->
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Cost Controls</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.ai_daily_cost_limit.label(class="form-label") }}
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.ai_daily_cost_limit(class="form-control") }}
+                                            </div>
+                                            <div class="form-text">Maximum AI costs per day</div>
+                                            {% for error in form.ai_daily_cost_limit.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.ai_monthly_cost_limit.label(class="form-label") }}
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.ai_monthly_cost_limit(class="form-control") }}
+                                            </div>
+                                            <div class="form-text">Maximum AI costs per month</div>
+                                            {% for error in form.ai_monthly_cost_limit.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Local AI Configuration -->
+                                <div class="mb-4" id="local-ai-config">
+                                    <h6 class="border-bottom pb-2 mb-3">Local AI Configuration</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.local_ai_model.label(class="form-label") }}
+                                            {{ form.local_ai_model(class="form-select") }}
+                                            <div class="form-text">Local model for sentence similarity (no API required)</div>
+                                            {% for error in form.local_ai_model.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.local_ai_similarity_threshold.label(class="form-label") }}
+                                            {{ form.local_ai_similarity_threshold(class="form-range", min="0", max="1", step="0.05") }}
+                                            <div class="d-flex justify-content-between small text-muted">
+                                                <span>0.0 (Loose)</span>
+                                                <span>Current: <span id="similarity-value">{{ form.local_ai_similarity_threshold.data }}</span></span>
+                                                <span>1.0 (Strict)</span>
+                                            </div>
+                                            {% for error in form.local_ai_similarity_threshold.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- General AI Settings -->
+                                <div class="mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">General AI Settings</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.ai_confidence_threshold.label(class="form-label") }}
+                                            {{ form.ai_confidence_threshold(class="form-range", min="0", max="1", step="0.05") }}
+                                            <div class="d-flex justify-content-between small text-muted">
+                                                <span>0.0 (Accept All)</span>
+                                                <span>Current: <span id="confidence-value">{{ form.ai_confidence_threshold.data }}</span></span>
+                                                <span>1.0 (High Confidence Only)</span>
+                                            </div>
+                                            {% for error in form.ai_confidence_threshold.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.ai_content_chunk_size.label(class="form-label") }}
+                                            {{ form.ai_content_chunk_size(class="form-control") }}
+                                            <div class="form-text">Content size sent to AI for analysis (characters)</div>
+                                            {% for error in form.ai_content_chunk_size.errors %}
+                                                <div class="text-danger small">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Save AI Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Current Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>AI Status:</strong>
+                                {% if current_config.ai_enabled %}
+                                    <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Analysis Mode:</strong>
+                                <br><small class="text-muted">{{ current_config.ai_analysis_mode|title }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>OpenAI API Key:</strong>
+                                {% if current_config.has_openai_key %}
+                                    <br><small class="text-success">✓ Configured</small>
+                                {% else %}
+                                    <br><small class="text-warning">⚠ Not configured</small>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Cost Limits:</strong>
+                                <br><small class="text-muted">Daily: ${{ "%.2f"|format(current_config.ai_daily_cost_limit) }}</small>
+                                <br><small class="text-muted">Monthly: ${{ "%.2f"|format(current_config.ai_monthly_cost_limit) }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Tips</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="small mb-0">
+                                <li><strong>Keyword Mode:</strong> Fast and free, good for basic matching</li>
+                                <li><strong>Local AI:</strong> Better accuracy, no API costs, requires more processing</li>
+                                <li><strong>OpenAI:</strong> Best accuracy but costs money</li>
+                                <li><strong>Hybrid:</strong> Balance of speed, accuracy, and cost</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update range slider display values
+document.addEventListener('DOMContentLoaded', function() {
+    const tempSlider = document.getElementById('openai_temperature');
+    const tempValue = document.getElementById('temp-value');
+    const similaritySlider = document.getElementById('local_ai_similarity_threshold');
+    const similarityValue = document.getElementById('similarity-value');
+    const confidenceSlider = document.getElementById('ai_confidence_threshold');
+    const confidenceValue = document.getElementById('confidence-value');
+    
+    if (tempSlider && tempValue) {
+        tempSlider.addEventListener('input', function() {
+            tempValue.textContent = this.value;
+        });
+    }
+    
+    if (similaritySlider && similarityValue) {
+        similaritySlider.addEventListener('input', function() {
+            similarityValue.textContent = this.value;
+        });
+    }
+    
+    if (confidenceSlider && confidenceValue) {
+        confidenceSlider.addEventListener('input', function() {
+            confidenceValue.textContent = this.value;
+        });
+    }
+    
+    // Show/hide config sections based on AI mode
+    const modeSelect = document.getElementById('ai_analysis_mode');
+    const openaiConfig = document.getElementById('openai-config');
+    const localConfig = document.getElementById('local-ai-config');
+    
+    function toggleConfigSections() {
+        const mode = modeSelect.value;
+        const needsOpenAI = ['ai', 'hybrid', 'validation'].includes(mode);
+        const needsLocal = ['local', 'hybrid'].includes(mode);
+        
+        if (openaiConfig) {
+            openaiConfig.style.display = needsOpenAI ? 'block' : 'none';
+        }
+        if (localConfig) {
+            localConfig.style.display = needsLocal ? 'block' : 'none';
+        }
+    }
+    
+    if (modeSelect && openaiConfig && localConfig) {
+        modeSelect.addEventListener('change', toggleConfigSections);
+        toggleConfigSections(); // Initial call
+    }
+});
+</script>
+{% endblock %}

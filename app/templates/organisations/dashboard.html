@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}{{ organisation.name }} Dashboard - PersonaMap{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-speedometer2"></i> {{ organisation.name }} Dashboard</h1>
+                <p class="text-muted">
+                    <a href="{{ url_for('organisations.list_organisations') }}" class="text-decoration-none">Organisations</a>
+                    <i class="bi bi-chevron-right mx-2"></i>
+                    <a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}" class="text-decoration-none">{{ organisation.name }}</a>
+                    <i class="bi bi-chevron-right mx-2"></i>
+                    Dashboard
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('organisations.view_organisation', id=organisation.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Organisation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Websites</p>
+                        <h3 class="card-title mb-0">{{ stats.total_websites }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-globe fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Personas</p>
+                        <h3 class="card-title mb-0">{{ stats.total_personas }}</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-people fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Crawl Jobs</p>
+                        <h3 class="card-title mb-0">{{ stats.total_crawl_jobs }}</h3>
+                        <small class="text-success">{{ stats.active_crawl_jobs }} active</small>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-search fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Pages Crawled</p>
+                        <h3 class="card-title mb-0">{{ stats.total_pages_crawled }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-file-earmark fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Mappings</p>
+                        <h3 class="card-title mb-0">{{ stats.total_mappings }}</h3>
+                        <small class="text-success">{{ stats.high_confidence_mappings }} high confidence</small>
+                    </div>
+                    <div class="text-danger">
+                        <i class="bi bi-diagram-3 fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted mb-0">Running Jobs</p>
+                        <h3 class="card-title mb-0">{{ stats.running_crawl_jobs }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-arrow-repeat fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Sections -->
+<div class="row">
+    <!-- Websites -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-globe"></i> Websites</h6>
+                {% if current_user.can_manage_organisation(organisation.id) %}
+                <a href="{{ url_for('organisations.manage_websites', id=organisation.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-gear"></i> Manage
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if websites %}
+                <div class="list-group list-group-flush">
+                    {% for website in websites %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ website.name }}</strong>
+                            <br><small class="text-muted">{{ website.domain }}</small>
+                        </div>
+                        <a href="{{ url_for('websites.view_website', id=website.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-globe text-muted display-4"></i>
+                    <p class="text-muted mt-2">No websites assigned</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Crawl Jobs -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-search"></i> Recent Crawl Jobs</h6>
+                <a href="{{ url_for('crawler.list_crawl_jobs') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if crawl_jobs %}
+                <div class="list-group list-group-flush">
+                    {% for job in crawl_jobs %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ job.name }}</strong>
+                            <br><small class="text-muted">{{ job.base_url[:40] }}{% if job.base_url|length > 40 %}...{% endif %}</small>
+                        </div>
+                        <span class="badge bg-{{ 'success' if job.status == 'completed' else 'warning' if job.status == 'running' else 'secondary' }}">
+                            {{ job.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-search text-muted display-4"></i>
+                    <p class="text-muted mt-2">No crawl jobs</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Personas -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-people"></i> Personas</h6>
+                <a href="{{ url_for('personas.list_personas') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if personas %}
+                <div class="list-group list-group-flush">
+                    {% for persona in personas %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ persona.title }}</strong>
+                            <br><small class="text-muted">{{ persona.description[:50] }}{% if persona.description|length > 50 %}...{% endif %}</small>
+                        </div>
+                        <a href="{{ url_for('personas.view_persona', id=persona.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-people text-muted display-4"></i>
+                    <p class="text-muted mt-2">No personas</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Pages Crawled</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_pages %}
+                <div class="list-group list-group-flush">
+                    {% for page in recent_pages %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>{{ page.title or 'Untitled Page' }}</strong>
+                                <br><small class="text-muted">{{ page.url[:60] }}{% if page.url|length > 60 %}...{% endif %}</small>
+                                <br><small class="text-muted">{{ page.crawled_at.strftime('%Y-%m-%d %H:%M') if page.crawled_at else 'Unknown date' }}</small>
+                            </div>
+                            <span class="badge bg-success">{{ page.status_code or 'N/A' }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-file-earmark text-muted display-4"></i>
+                    <p class="text-muted mt-2">No recent pages</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-diagram-3"></i> Recent Content Mappings</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_mappings %}
+                <div class="list-group list-group-flush">
+                    {% for mapping in recent_mappings %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong>{{ mapping.persona.title if mapping.persona else 'Unknown Persona' }}</strong>
+                                <br><small class="text-muted">{{ mapping.page.title[:40] if mapping.page and mapping.page.title else 'Untitled Page' }}{% if mapping.page and mapping.page.title and mapping.page.title|length > 40 %}...{% endif %}</small>
+                                <br><small class="text-muted">{{ mapping.created_at.strftime('%Y-%m-%d %H:%M') if mapping.created_at else 'Unknown date' }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'success' if mapping.confidence_score >= 0.8 else 'warning' if mapping.confidence_score >= 0.6 else 'danger' }}">
+                                {{ "%.0f"|format(mapping.confidence_score * 100) }}%
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-diagram-3 text-muted display-4"></i>
+                    <p class="text-muted mt-2">No recent mappings</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if top_personas %}
+<!-- Top Personas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-trophy"></i> Top Personas by Content Mappings</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for persona, mapping_count in top_personas %}
+                    <div class="col-md-4 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                {{ loop.index }}
+                            </div>
+                            <div>
+                                <strong>{{ persona.title }}</strong>
+                                <br><small class="text-muted">{{ mapping_count }} mappings</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
