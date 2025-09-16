@@ -7,6 +7,7 @@ class CrawlJob(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     base_url = db.Column(db.String(500), nullable=False)
+    website_id = db.Column(db.Integer, db.ForeignKey('websites.id'), nullable=True)  # Can be null for legacy jobs
     include_patterns = db.Column(db.Text)  # JSON string or newline-separated patterns
     exclude_patterns = db.Column(db.Text)  # JSON string or newline-separated patterns
     max_pages = db.Column(db.Integer, default=100, nullable=False)
@@ -22,7 +23,9 @@ class CrawlJob(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relationships
+    website = db.relationship('Website', back_populates='crawl_jobs')
     crawled_pages = db.relationship('CrawledPage', backref='crawl_job', lazy='dynamic', cascade='all, delete-orphan')
+    crawl_job_personas = db.relationship('CrawlJobPersona', back_populates='crawl_job', cascade='all, delete-orphan')
     
     def get_include_patterns_list(self):
         """Return include patterns as a list."""
@@ -86,6 +89,41 @@ class CrawlJob(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
+    
+    def get_personas(self):
+        """Get all personas assigned to this crawl job."""
+        from .persona import Persona
+        from .crawl_job_persona import CrawlJobPersona
+        return Persona.query.join(CrawlJobPersona).filter(
+            CrawlJobPersona.crawl_job_id == self.id
+        ).all()
+    
+    def add_persona(self, persona_id):
+        """Add a persona to this crawl job."""
+        from .crawl_job_persona import CrawlJobPersona
+        # Check if relationship already exists
+        existing = CrawlJobPersona.query.filter_by(
+            crawl_job_id=self.id,
+            persona_id=persona_id
+        ).first()
+        
+        if not existing:
+            crawl_job_persona = CrawlJobPersona(
+                crawl_job_id=self.id,
+                persona_id=persona_id
+            )
+            db.session.add(crawl_job_persona)
+    
+    def remove_persona(self, persona_id):
+        """Remove a persona from this crawl job."""
+        from .crawl_job_persona import CrawlJobPersona
+        crawl_job_persona = CrawlJobPersona.query.filter_by(
+            crawl_job_id=self.id,
+            persona_id=persona_id
+        ).first()
+        
+        if crawl_job_persona:
+            db.session.delete(crawl_job_persona)
     
     def __repr__(self):
         return f'<CrawlJob {self.name}>'

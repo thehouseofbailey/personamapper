@@ -26,6 +26,21 @@ def list_crawl_jobs():
 @login_required
 def create_crawl_job():
     """Create a new crawl job."""
+    from flask_login import current_user
+    from app.models import Website, Persona
+    
+    # Get website_id from query parameter (for pre-selection)
+    website_id = request.args.get('website_id', type=int)
+    
+    # Get user's accessible websites (filtered by organization)
+    accessible_websites = []
+    user_orgs = current_user.get_organisations()
+    for org in user_orgs:
+        accessible_websites.extend(org.get_websites())
+    
+    # Remove duplicates
+    accessible_websites = list({w.id: w for w in accessible_websites}.values())
+    
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         base_url = request.form.get('base_url', '').strip()
@@ -34,6 +49,8 @@ def create_crawl_job():
         max_pages = request.form.get('max_pages', type=int)
         crawl_mode = request.form.get('crawl_mode', 'incremental').strip()
         schedule = request.form.get('schedule', '').strip()
+        selected_website_id = request.form.get('website_id', type=int)
+        selected_persona_ids = request.form.getlist('persona_ids')
         
         # Validation
         errors = []
@@ -48,6 +65,11 @@ def create_crawl_job():
         elif not (base_url.startswith('http://') or base_url.startswith('https://')):
             errors.append('Base URL must start with http:// or https://')
         
+        if not selected_website_id:
+            errors.append('Website selection is required.')
+        elif selected_website_id not in [w.id for w in accessible_websites]:
+            errors.append('You do not have access to the selected website.')
+        
         if not max_pages or max_pages < 1:
             errors.append('Max pages must be at least 1.')
         elif max_pages > 10000:
@@ -60,18 +82,35 @@ def create_crawl_job():
         if errors:
             for error in errors:
                 flash(error, 'error')
+            
+            # Get personas for error case
+            available_personas = []
+            if selected_website_id and selected_website_id in [w.id for w in accessible_websites]:
+                selected_website = next((w for w in accessible_websites if w.id == selected_website_id), None)
+                if selected_website:
+                    available_personas = selected_website.get_personas()
+            else:
+                for org in user_orgs:
+                    available_personas.extend(org.get_personas())
+                available_personas = list({p.id: p for p in available_personas}.values())
+            
             return render_template('crawler/create.html',
                                  name=name,
                                  base_url=base_url,
                                  include_patterns=include_patterns,
                                  exclude_patterns=exclude_patterns,
                                  max_pages=max_pages,
-                                 schedule=schedule)
+                                 schedule=schedule,
+                                 accessible_websites=accessible_websites,
+                                 available_personas=available_personas,
+                                 selected_website_id=selected_website_id,
+                                 selected_persona_ids=selected_persona_ids)
         
         # Create new crawl job
         crawl_job = CrawlJob(
             name=name,
             base_url=base_url,
+            website_id=selected_website_id,
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             max_pages=max_pages,
@@ -80,12 +119,35 @@ def create_crawl_job():
         )
         
         db.session.add(crawl_job)
+        db.session.flush()  # Get the ID before committing
+        
+        # Add persona assignments
+        for persona_id in selected_persona_ids:
+            if persona_id:  # Skip empty values
+                crawl_job.add_persona(int(persona_id))
+        
         db.session.commit()
         
         flash(f'Crawl job "{name}" created successfully!', 'success')
         return redirect(url_for('crawler.view_crawl_job', id=crawl_job.id))
     
-    return render_template('crawler/create.html')
+    # Get personas for selected website (if any) for the GET request
+    available_personas = []
+    if website_id and website_id in [w.id for w in accessible_websites]:
+        selected_website = next((w for w in accessible_websites if w.id == website_id), None)
+        if selected_website:
+            available_personas = selected_website.get_personas()
+    else:
+        # If no specific website, get all personas from user's organizations
+        for org in user_orgs:
+            available_personas.extend(org.get_personas())
+        # Remove duplicates
+        available_personas = list({p.id: p for p in available_personas}.values())
+    
+    return render_template('crawler/create.html',
+                         accessible_websites=accessible_websites,
+                         available_personas=available_personas,
+                         selected_website_id=website_id)
 
 @bp.route('/<int:id>')
 @login_required

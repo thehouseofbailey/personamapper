@@ -9,41 +9,68 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Home page - redirect to dashboard if logged in, otherwise show landing page."""
+    """Home page - redirect to organisations if logged in, otherwise show landing page."""
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('organisations.list_organisations'))
     return render_template('index.html')
 
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Main dashboard showing overview statistics."""
-    # Get overview statistics
+    """Main dashboard showing overview statistics for user's accessible data."""
+    from app.auth.permissions import get_user_accessible_personas, get_user_accessible_crawl_jobs, get_user_accessible_websites
+    
+    # Get user-accessible data
+    accessible_personas = get_user_accessible_personas()
+    accessible_crawl_jobs = get_user_accessible_crawl_jobs()
+    accessible_websites = get_user_accessible_websites()
+    
+    # Get website IDs for filtering related data
+    website_ids = [w.id for w in accessible_websites]
+    crawl_job_ids = [j.id for j in accessible_crawl_jobs]
+    persona_ids = [p.id for p in accessible_personas]
+    
+    # Get overview statistics filtered by user access
     stats = {
-        'total_personas': Persona.query.filter_by(is_active=True).count(),
-        'total_crawl_jobs': CrawlJob.query.count(),
-        'active_crawl_jobs': CrawlJob.query.filter_by(status='active').count(),
-        'running_crawl_jobs': CrawlJob.query.filter_by(status='running').count(),
-        'total_pages_crawled': CrawledPage.query.count(),
-        'total_mappings': ContentMapping.query.filter_by(is_active=True).count(),
+        'total_personas': len(accessible_personas),
+        'total_crawl_jobs': len(accessible_crawl_jobs),
+        'active_crawl_jobs': len([j for j in accessible_crawl_jobs if j.status == 'active']),
+        'running_crawl_jobs': len([j for j in accessible_crawl_jobs if j.status == 'running']),
+        'total_pages_crawled': CrawledPage.query.filter(
+            CrawledPage.crawl_job_id.in_(crawl_job_ids) if crawl_job_ids else False
+        ).count(),
+        'total_mappings': ContentMapping.query.filter(
+            db.and_(
+                ContentMapping.persona_id.in_(persona_ids) if persona_ids else False,
+                ContentMapping.is_active == True
+            )
+        ).count(),
         'high_confidence_mappings': ContentMapping.query.filter(
             db.and_(
+                ContentMapping.persona_id.in_(persona_ids) if persona_ids else False,
                 ContentMapping.confidence_score >= 0.8,
                 ContentMapping.is_active == True
             )
         ).count()
     }
     
-    # Get recent activity
-    recent_pages = CrawledPage.query.order_by(
+    # Get recent activity filtered by user access
+    recent_pages = CrawledPage.query.filter(
+        CrawledPage.crawl_job_id.in_(crawl_job_ids) if crawl_job_ids else False
+    ).order_by(
         CrawledPage.crawled_at.desc()
     ).limit(5).all()
     
-    recent_mappings = ContentMapping.query.filter_by(is_active=True).order_by(
+    recent_mappings = ContentMapping.query.filter(
+        db.and_(
+            ContentMapping.persona_id.in_(persona_ids) if persona_ids else False,
+            ContentMapping.is_active == True
+        )
+    ).order_by(
         ContentMapping.created_at.desc()
     ).limit(5).all()
     
-    # Get top personas by mapping count
+    # Get top personas by mapping count (filtered by user access)
     top_personas = db.session.query(
         Persona,
         db.func.count(ContentMapping.id).label('mapping_count')
@@ -51,6 +78,7 @@ def dashboard():
         ContentMapping, Persona.id == ContentMapping.persona_id
     ).filter(
         db.and_(
+            Persona.id.in_(persona_ids) if persona_ids else False,
             Persona.is_active == True,
             ContentMapping.is_active == True
         )

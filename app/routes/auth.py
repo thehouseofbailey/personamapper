@@ -11,7 +11,7 @@ bp = Blueprint('auth', __name__)
 def login():
     """User login page."""
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('organisations.list_organisations'))
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -36,7 +36,7 @@ def login():
             # Redirect to the page the user was trying to access
             next_page = request.args.get('next')
             if not next_page or url_parse(next_page).netloc != '':
-                next_page = url_for('main.dashboard')
+                next_page = url_for('organisations.list_organisations')
             
             flash(f'Welcome back, {user.username}!', 'success')
             return redirect(next_page)
@@ -110,7 +110,32 @@ def logout():
 @login_required
 def profile():
     """User profile page."""
-    return render_template('auth/profile.html')
+    from ..models.user_organisation_role import UserOrganisationRole
+    from ..models.user_website_role import UserWebsiteRole
+    from ..models.organisation import Organisation, OrganisationWebsite
+    from ..models.website import Website
+    
+    # Get user's organizational roles
+    org_roles = db.session.query(UserOrganisationRole, Organisation).join(
+        Organisation, UserOrganisationRole.organisation_id == Organisation.id
+    ).filter(UserOrganisationRole.user_id == current_user.id).all()
+    
+    # Get user's website roles with organization info
+    website_roles = db.session.query(UserWebsiteRole, Website, Organisation).join(
+        Website, UserWebsiteRole.website_id == Website.id
+    ).join(
+        OrganisationWebsite, Website.id == OrganisationWebsite.website_id
+    ).join(
+        Organisation, OrganisationWebsite.organisation_id == Organisation.id
+    ).filter(UserWebsiteRole.user_id == current_user.id).all()
+    
+    # Get user's accessible organizations
+    accessible_orgs = current_user.get_organisations()
+    
+    return render_template('auth/profile.html', 
+                         org_roles=org_roles,
+                         website_roles=website_roles,
+                         accessible_orgs=accessible_orgs)
 
 @bp.route('/change-password', methods=['GET', 'POST'])
 @login_required

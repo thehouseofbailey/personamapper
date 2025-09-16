@@ -34,6 +34,8 @@ def create_app():
     from app.routes.reports import bp as reports_bp
     from app.routes.api import bp as api_bp
     from app.routes.integration import bp as integration_bp
+    from app.routes.organisations import bp as organisations_bp
+    from app.routes.websites import bp as websites_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -42,6 +44,8 @@ def create_app():
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(integration_bp, url_prefix='/integration')
+    app.register_blueprint(organisations_bp, url_prefix='/organisations')
+    app.register_blueprint(websites_bp, url_prefix='/websites')
     
     # Create database tables
     with app.app_context():

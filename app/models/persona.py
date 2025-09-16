@@ -8,12 +8,15 @@ class Persona(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     keywords = db.Column(db.Text)  # JSON string or comma-separated keywords
+    website_id = db.Column(db.Integer, db.ForeignKey('websites.id'), nullable=True)  # Can be null for legacy personas
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relationships
+    website = db.relationship('Website', back_populates='personas')
     content_mappings = db.relationship('ContentMapping', backref='persona', lazy='dynamic', cascade='all, delete-orphan')
+    crawl_job_personas = db.relationship('CrawlJobPersona', back_populates='persona', cascade='all, delete-orphan')
     
     def get_keywords_list(self):
         """Return keywords as a list."""

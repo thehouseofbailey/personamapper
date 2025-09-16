@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
+from flask_login import login_required, current_user
 from app.models.persona import Persona
 from app.models.content_mapping import ContentMapping
 from app.models.crawled_page import CrawledPage
@@ -368,6 +369,7 @@ def get_sample_urls():
 def get_ai_status():
     """
     Get AI analyzer status and configuration.
+    Optional query parameter: website_id for organisation-specific config
     """
     if not validate_api_request():
         return jsonify({'error': 'Invalid request'}), 403
@@ -375,7 +377,8 @@ def get_ai_status():
     try:
         from app.services.unified_analyzer import UnifiedContentAnalyzer
         
-        analyzer = UnifiedContentAnalyzer()
+        website_id = request.args.get('website_id', type=int)
+        analyzer = UnifiedContentAnalyzer(website_id=website_id)
         info = analyzer.get_analyzer_info()
         
         return jsonify({
@@ -410,6 +413,7 @@ def analyze_content_with_ai():
         content = data.get('content', '')
         url = data.get('url', 'https://example.com/test')
         title = data.get('title', 'Test Page')
+        website_id = data.get('website_id')  # Optional website ID for AI config
         
         if not content or len(content.strip()) < 50:
             return jsonify({'error': 'Content too short for analysis (minimum 50 characters)'}), 400
@@ -425,7 +429,7 @@ def analyze_content_with_ai():
             word_count=len(content.split())
         )
         
-        analyzer = UnifiedContentAnalyzer()
+        analyzer = UnifiedContentAnalyzer(website_id=website_id)
         mappings = analyzer.analyze_page(temp_page)
         
         # Format results
@@ -450,3 +454,33 @@ def analyze_content_with_ai():
     except Exception as e:
         current_app.logger.error(f"Error in analyze_content_with_ai: {str(e)}")
         return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
+
+@bp.route('/websites/<int:website_id>/personas', methods=['GET'])
+@login_required
+def get_website_personas(website_id):
+    """Get all personas for a specific website."""
+    from app.models.website import Website
+    
+    # Check if user has access to this website
+    website = Website.query.get_or_404(website_id)
+    
+    if not current_user.can_view_website(website_id):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get personas for this website
+    personas = website.get_personas()
+    
+    personas_data = []
+    for persona in personas:
+        personas_data.append({
+            'id': persona.id,
+            'title': persona.title,
+            'description': persona.description,
+            'is_active': persona.is_active
+        })
+    
+    return jsonify({
+        'personas': personas_data,
+        'website_id': website_id,
+        'website_name': website.name
+    })

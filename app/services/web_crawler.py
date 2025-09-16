@@ -49,8 +49,8 @@ class WebCrawler:
         self.url_queue: Queue = Queue()
         self.failed_urls: Set[str] = set()
         
-        # Content analyzer
-        self.content_analyzer = UnifiedContentAnalyzer()
+        # Content analyzer (will be initialized after crawl job is loaded)
+        self.content_analyzer = None
         
         # Robots.txt cache
         self.robots_cache: Dict[str, RobotFileParser] = {}
@@ -76,6 +76,12 @@ class WebCrawler:
             if not self.crawl_job:
                 logger.error(f"Crawl job {self.crawl_job_id} not found")
                 return False
+            
+            # Initialize content analyzer with website-specific AI config
+            website_id = self.crawl_job.website_id if self.crawl_job else None
+            self.content_analyzer = UnifiedContentAnalyzer(website_id=website_id)
+            logger.info(f"Content analyzer initialized for website {website_id}")
+            
             return True
         except Exception as e:
             logger.error(f"Error loading crawl job: {e}")
@@ -167,11 +173,14 @@ class WebCrawler:
         if url_domain != base_domain:
             return False
 
-        # Check if URL already exists in database (for incremental mode)
+        # Check if URL already exists in database for this crawl job (for incremental mode)
         if self.crawl_job.crawl_mode == 'incremental':
-            existing_page = CrawledPage.query.filter_by(url=url).first()
+            existing_page = CrawledPage.query.filter_by(
+                url=url, 
+                crawl_job_id=self.crawl_job.id
+            ).first()
             if existing_page:
-                logger.info(f"Skipping already crawled URL in incremental mode: {url}")
+                logger.info(f"Skipping already crawled URL in incremental mode for this crawl job: {url}")
                 return False
 
         # Check include patterns
@@ -414,6 +423,12 @@ class WebCrawler:
             
             # Create new mappings for this crawl
             new_mappings_count = 0
+            
+            # Ensure content analyzer is available
+            if not self.content_analyzer:
+                logger.error("Content analyzer not initialized. Cannot create mappings.")
+                return 0
+            
             for persona in personas:
                 # Analyze content for this persona
                 mapping_result = self.content_analyzer.analyze_content_for_persona(

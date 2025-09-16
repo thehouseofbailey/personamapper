@@ -30,11 +30,51 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="website_id" class="form-label">Website</label>
+                        <select class="form-select" id="website_id" name="website_id" required onchange="loadPersonas()">
+                            <option value="">Select a website...</option>
+                            {% for website in accessible_websites %}
+                            <option value="{{ website.id }}" {{ 'selected' if website.id == selected_website_id else '' }}>
+                                {{ website.name }} - {{ website.domain }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select the website this crawl job belongs to</div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="base_url" class="form-label">Base URL</label>
                         <input type="url" class="form-control" id="base_url" name="base_url" 
                                value="{{ base_url or '' }}" required 
                                placeholder="https://example.com">
                         <div class="form-text">The starting URL for the crawl (must include http:// or https://)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Personas to Apply</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <div id="personas-list">
+                                {% if available_personas %}
+                                    {% for persona in available_personas %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="persona_ids" 
+                                               value="{{ persona.id }}" id="persona_{{ persona.id }}"
+                                               {{ 'checked' if persona.id|string in (selected_persona_ids or []) else '' }}>
+                                        <label class="form-check-label" for="persona_{{ persona.id }}">
+                                            <strong>{{ persona.title }}</strong>
+                                            <br><small class="text-muted">{{ persona.description[:100] }}{% if persona.description|length > 100 %}...{% endif %}</small>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-muted text-center py-2">
+                                        <i class="bi bi-person-badge"></i><br>
+                                        <small>Select a website to see available personas</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-text">Select which personas should be applied to analyze the crawled content</div>
                     </div>
                     
                     <div class="mb-3">
@@ -141,4 +181,65 @@
         </div>
     </div>
 </div>
+
+<script>
+function loadPersonas() {
+    const websiteId = document.getElementById('website_id').value;
+    const personasList = document.getElementById('personas-list');
+    
+    if (!websiteId) {
+        personasList.innerHTML = `
+            <div class="text-muted text-center py-2">
+                <i class="bi bi-person-badge"></i><br>
+                <small>Select a website to see available personas</small>
+            </div>
+        `;
+        return;
+    }
+    
+    // Show loading state
+    personasList.innerHTML = `
+        <div class="text-center py-2">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <small class="d-block mt-2">Loading personas...</small>
+        </div>
+    `;
+    
+    // Fetch personas for the selected website
+    fetch(`/api/websites/${websiteId}/personas`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.personas && data.personas.length > 0) {
+                personasList.innerHTML = data.personas.map(persona => `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="persona_ids" 
+                               value="${persona.id}" id="persona_${persona.id}">
+                        <label class="form-check-label" for="persona_${persona.id}">
+                            <strong>${persona.title}</strong>
+                            <br><small class="text-muted">${persona.description.length > 100 ? persona.description.substring(0, 100) + '...' : persona.description}</small>
+                        </label>
+                    </div>
+                `).join('');
+            } else {
+                personasList.innerHTML = `
+                    <div class="text-muted text-center py-2">
+                        <i class="bi bi-person-badge"></i><br>
+                        <small>No personas available for this website</small>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading personas:', error);
+            personasList.innerHTML = `
+                <div class="text-danger text-center py-2">
+                    <i class="bi bi-exclamation-triangle"></i><br>
+                    <small>Error loading personas</small>
+                </div>
+            `;
+        });
+}
+</script>
 {% endblock %}

@@ -8,6 +8,7 @@ from flask import current_app
 from app.models import CrawledPage, Persona, ContentMapping
 from app.services.content_analyzer import ContentAnalyzer
 from app.services.ai_analyzer import AIContentAnalyzer
+from app.services.ai_config_service import get_ai_config_for_website
 
 logger = logging.getLogger(__name__)
 
@@ -17,18 +18,48 @@ class UnifiedContentAnalyzer:
     based on configuration and availability.
     """
     
-    def __init__(self):
+    def __init__(self, website_id=None, ai_config=None):
+        """
+        Initialize the unified analyzer.
+        
+        Args:
+            website_id: ID of the website being analyzed (for org-specific config)
+            ai_config: Pre-loaded AI configuration dict (optional)
+        """
+        self.website_id = website_id
+        self.ai_config = ai_config
         self.keyword_analyzer = ContentAnalyzer()
         self.ai_analyzer = None
         self._initialize_analyzers()
     
     def _initialize_analyzers(self):
-        """Initialize analyzers based on configuration."""
+        """Initialize analyzers based on organisation-specific configuration."""
         try:
+            # Get AI configuration for this website/organisation
+            if not self.ai_config and self.website_id:
+                self.ai_config = get_ai_config_for_website(self.website_id)
+            
+            # Fall back to global config if no org-specific config available
+            if not self.ai_config:
+                self.ai_config = {
+                    'ai_enabled': current_app.config.get('AI_ENABLED', False),
+                    'ai_analysis_mode': current_app.config.get('AI_ANALYSIS_MODE', 'keyword'),
+                    'openai_api_key': current_app.config.get('OPENAI_API_KEY'),
+                    'openai_model': current_app.config.get('OPENAI_MODEL', 'gpt-3.5-turbo'),
+                    'openai_max_tokens': current_app.config.get('OPENAI_MAX_TOKENS', 1000),
+                    'openai_temperature': current_app.config.get('OPENAI_TEMPERATURE', 0.3),
+                    'ai_daily_cost_limit': current_app.config.get('AI_DAILY_COST_LIMIT', 10.0),
+                    'ai_monthly_cost_limit': current_app.config.get('AI_MONTHLY_COST_LIMIT', 100.0),
+                    'local_ai_model': current_app.config.get('LOCAL_AI_MODEL', 'all-MiniLM-L6-v2'),
+                    'local_ai_similarity_threshold': current_app.config.get('LOCAL_AI_SIMILARITY_THRESHOLD', 0.5),
+                    'ai_confidence_threshold': current_app.config.get('AI_CONFIDENCE_THRESHOLD', 0.3),
+                    'ai_content_chunk_size': current_app.config.get('AI_CONTENT_CHUNK_SIZE', 2000)
+                }
+            
             # Initialize AI analyzer if enabled
-            if current_app.config.get('AI_ENABLED', False):
-                self.ai_analyzer = AIContentAnalyzer()
-                logger.info("AI analyzer initialized successfully")
+            if self.ai_config.get('ai_enabled', False):
+                self.ai_analyzer = AIContentAnalyzer(ai_config=self.ai_config)
+                logger.info(f"AI analyzer initialized successfully with mode: {self.ai_config.get('ai_analysis_mode')}")
             else:
                 logger.info("AI analysis disabled in configuration")
         except Exception as e:
@@ -45,7 +76,7 @@ class UnifiedContentAnalyzer:
         Returns:
             List of mapping dictionaries
         """
-        analysis_mode = current_app.config.get('AI_ANALYSIS_MODE', 'keyword')
+        analysis_mode = self.ai_config.get('ai_analysis_mode', 'keyword')
         
         # Use AI analyzer if available and configured
         if self.ai_analyzer and analysis_mode != 'keyword':
@@ -68,7 +99,7 @@ class UnifiedContentAnalyzer:
         Returns:
             Number of mappings created
         """
-        analysis_mode = current_app.config.get('AI_ANALYSIS_MODE', 'keyword')
+        analysis_mode = self.ai_config.get('ai_analysis_mode', 'keyword')
         
         # Use AI analyzer if available and configured
         if self.ai_analyzer and analysis_mode != 'keyword':
@@ -100,8 +131,9 @@ class UnifiedContentAnalyzer:
         info = {
             'keyword_available': True,
             'ai_available': self.ai_analyzer is not None,
-            'current_mode': current_app.config.get('AI_ANALYSIS_MODE', 'keyword'),
-            'ai_enabled': current_app.config.get('AI_ENABLED', False)
+            'current_mode': self.ai_config.get('ai_analysis_mode', 'keyword'),
+            'ai_enabled': self.ai_config.get('ai_enabled', False),
+            'website_id': self.website_id
         }
         
         if self.ai_analyzer:

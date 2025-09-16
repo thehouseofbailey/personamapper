@@ -8,15 +8,45 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1><i class="bi bi-graph-up"></i> Reports Dashboard</h1>
-                <p class="text-muted">Analytics and insights for your persona mapping</p>
+                {% if is_super_admin %}
+                <p class="text-muted">Analytics and insights for your persona mapping (All Organizations)</p>
+                {% elif accessible_websites %}
+                <p class="text-muted">Analytics and insights for: {{ accessible_websites|join(', ') }}</p>
+                {% else %}
+                <p class="text-warning">No website access - contact your administrator</p>
+                {% endif %}
+                {% if selected_crawl_job %}
+                <p class="text-info"><i class="bi bi-filter"></i> Filtered by crawl job: <strong>{{ selected_crawl_job.name }}</strong></p>
+                {% endif %}
             </div>
-            <div class="btn-group" role="group">
-                <a href="{{ url_for('reports.export_personas') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-download"></i> Export Personas
-                </a>
-                <a href="{{ url_for('reports.export_mappings') }}" class="btn btn-outline-success">
-                    <i class="bi bi-download"></i> Export Mappings
-                </a>
+            <div class="d-flex gap-2">
+                {% if available_crawl_jobs %}
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-filter"></i> Filter by Crawl Job
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('reports.dashboard', days=days) }}">All Crawl Jobs</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% for job in available_crawl_jobs %}
+                        <li>
+                            <a class="dropdown-item {% if selected_crawl_job_id == job.id %}active{% endif %}" 
+                               href="{{ url_for('reports.dashboard', days=days, crawl_job_id=job.id) }}">
+                                {{ job.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('reports.export_personas', crawl_job_id=selected_crawl_job_id) if selected_crawl_job_id else url_for('reports.export_personas') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-download"></i> Export Personas
+                    </a>
+                    <a href="{{ url_for('reports.export_mappings', crawl_job_id=selected_crawl_job_id) if selected_crawl_job_id else url_for('reports.export_mappings') }}" class="btn btn-outline-success">
+                        <i class="bi bi-download"></i> Export Mappings
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -123,6 +153,7 @@
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 20px;">
+                                            <!-- CSS parser: ignore template syntax -->
                                             <div class="progress-bar bg-{{ conf_class }}" role="progressbar" 
                                                  style="width: {{ avg_conf }}%" 
                                                  aria-valuenow="{{ avg_conf }}" 

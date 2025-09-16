@@ -16,8 +16,8 @@ class ContentMapping(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
-    # Relationships
-    page = db.relationship('CrawledPage', lazy=True, overlaps="content_mappings")
+    # Relationships - using backref from CrawledPage model
+    # Note: crawled_page relationship is defined via backref in CrawledPage model
     
     # Composite index for efficient queries
     __table_args__ = (

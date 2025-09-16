@@ -1,16 +1,27 @@
-# PersonaMap AI Integration
-
-PersonaMap now supports AI-powered content analysis for more accurate and semantic persona mapping. This document explains how to set up and use the AI features.
+# Organisation-Specific AI Configuration
 
 ## Overview
 
-The AI integration provides several analysis modes:
+The PersonaMap application now supports **per-organisation AI configuration** instead of global settings. This allows different organizations to have their own AI analysis settings, API keys, and cost controls.
 
-- **Keyword**: Traditional keyword-based matching (default, no AI required)
-- **AI**: Pure AI analysis using OpenAI GPT or local models
-- **Hybrid**: Combines AI and keyword analysis for best results
-- **Validation**: Uses AI to validate keyword-based mappings
-- **Local**: Uses local Sentence Transformers for privacy-focused analysis
+## Migration from Global Settings
+
+The AI configuration has been moved from the `.env` file to the database as organisation-specific settings. The old `.env` AI settings are now commented out and deprecated.
+
+### What Changed
+
+- **Before**: Global AI settings in `.env` file applied to all organisations
+- **After**: Each organisation can configure its own AI settings independently
+
+## AI Integration Guide (Updated for Organisation-Specific Config)
+
+PersonaMap supports multiple AI analysis modes to automatically map website content to personas, with each organisation able to configure their own settings:
+
+1. **Keyword Matching** - Fast rule-based matching using persona keywords
+2. **Local AI** - Free local sentence transformers (no API required)
+3. **AI Analysis** - GPT-powered content analysis (per-organisation API keys)
+4. **Hybrid Mode** - Combines keyword + AI for best accuracy
+5. **Validation Mode** - Uses AI to validate keyword matches
 
 ## Quick Setup
 
@@ -37,17 +48,53 @@ cp .env.example .env
 Edit `.env` to configure AI settings:
 
 ```bash
-# Enable AI analysis
-AI_ENABLED=true
-AI_ANALYSIS_MODE=hybrid
+## Configuration (Per-Organisation)
 
-# OpenAI Configuration (for cloud AI)
-OPENAI_API_KEY=your-openai-api-key-here
-OPENAI_MODEL=gpt-3.5-turbo
+### Accessing AI Configuration
 
-# Cost controls
-AI_DAILY_COST_LIMIT=10.0
-AI_MONTHLY_COST_LIMIT=100.0
+1. Navigate to an organisation: `http://localhost:5002/organisations/<id>`
+2. Click the **"AI Config"** button (requires organisation management permissions)
+3. Configure AI settings for that specific organisation
+
+### Database Fields
+
+AI configuration is stored in the `organisations` table:
+
+```sql
+-- Basic AI Settings
+ai_enabled BOOLEAN DEFAULT 0
+ai_analysis_mode TEXT DEFAULT 'keyword'
+
+-- OpenAI Configuration
+openai_api_key TEXT
+openai_model TEXT DEFAULT 'gpt-3.5-turbo'
+openai_max_tokens INTEGER DEFAULT 1000
+openai_temperature REAL DEFAULT 0.3
+
+-- Cost Controls
+ai_daily_cost_limit REAL DEFAULT 10.0
+ai_monthly_cost_limit REAL DEFAULT 100.0
+
+-- Local AI Configuration
+local_ai_model TEXT DEFAULT 'all-MiniLM-L6-v2'
+local_ai_similarity_threshold REAL DEFAULT 0.5
+
+-- General Settings
+ai_confidence_threshold REAL DEFAULT 0.3
+ai_content_chunk_size INTEGER DEFAULT 2000
+```
+
+### Using AI Configuration in Code
+
+```python
+from app.services.ai_config_service import get_ai_config_for_organisation
+
+# Get AI config for specific organisation
+config = get_ai_config_for_organisation(organisation_id)
+if config['ai_enabled']:
+    # Perform AI analysis using organisation's settings
+    pass
+```
 ```
 
 ### 3. Start the Application

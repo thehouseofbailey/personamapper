@@ -21,7 +21,14 @@ class CostLimitExceededError(AIAnalysisError):
 class AIContentAnalyzer:
     """AI-powered content analyzer for persona mapping."""
     
-    def __init__(self):
+    def __init__(self, ai_config=None):
+        """
+        Initialize AI Content Analyzer.
+        
+        Args:
+            ai_config: AI configuration dictionary (organisation-specific)
+        """
+        self.ai_config = ai_config or {}
         self.openai_client = None
         self.sentence_transformer = None
         self.daily_cost = 0.0
@@ -32,12 +39,13 @@ class AIContentAnalyzer:
         """Initialize AI services based on configuration."""
         try:
             # Initialize OpenAI if enabled and API key is available
-            if current_app.config.get('AI_ENABLED') and current_app.config.get('OPENAI_API_KEY'):
+            ai_enabled = self.ai_config.get('ai_enabled', current_app.config.get('AI_ENABLED', False))
+            api_key = self.ai_config.get('openai_api_key', current_app.config.get('OPENAI_API_KEY'))
+            
+            if ai_enabled and api_key:
                 try:
                     import openai
-                    self.openai_client = openai.OpenAI(
-                        api_key=current_app.config['OPENAI_API_KEY']
-                    )
+                    self.openai_client = openai.OpenAI(api_key=api_key)
                     logger.info("OpenAI client initialized successfully")
                 except ImportError:
                     logger.warning("OpenAI package not installed. Install with: pip install openai")
@@ -50,7 +58,7 @@ class AIContentAnalyzer:
                 import numpy as np
                 from sklearn.metrics.pairwise import cosine_similarity
                 
-                model_name = current_app.config.get('LOCAL_AI_MODEL', 'all-MiniLM-L6-v2')
+                model_name = self.ai_config.get('local_ai_model', current_app.config.get('LOCAL_AI_MODEL', 'all-MiniLM-L6-v2'))
                 self.sentence_transformer = SentenceTransformer(model_name)
                 self.np = np
                 self.cosine_similarity = cosine_similarity
@@ -73,7 +81,8 @@ class AIContentAnalyzer:
         Returns:
             List of dictionaries containing persona mappings with confidence scores
         """
-        if not page.content or len(page.content.strip()) < current_app.config.get('CONTENT_MIN_LENGTH', 100):
+        content_min_length = current_app.config.get('CONTENT_MIN_LENGTH', 100)  # This is still global
+        if not page.content or len(page.content.strip()) < content_min_length:
             return []
         
         # Get all active personas
@@ -81,7 +90,7 @@ class AIContentAnalyzer:
         if not personas:
             return []
         
-        analysis_mode = current_app.config.get('AI_ANALYSIS_MODE', 'hybrid')
+        analysis_mode = self.ai_config.get('ai_analysis_mode', current_app.config.get('AI_ANALYSIS_MODE', 'hybrid'))
         
         try:
             if analysis_mode == 'ai' and self.openai_client:
@@ -120,13 +129,13 @@ class AIContentAnalyzer:
         
         try:
             response = self.openai_client.chat.completions.create(
-                model=current_app.config.get('OPENAI_MODEL', 'gpt-3.5-turbo'),
+                model=self.ai_config.get('openai_model', current_app.config.get('OPENAI_MODEL', 'gpt-3.5-turbo')),
                 messages=[
                     {"role": "system", "content": "You are an expert content analyst specializing in persona mapping for marketing and content strategy."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=current_app.config.get('OPENAI_MAX_TOKENS', 1000),
-                temperature=current_app.config.get('OPENAI_TEMPERATURE', 0.3)
+                max_tokens=self.ai_config.get('openai_max_tokens', current_app.config.get('OPENAI_MAX_TOKENS', 1000)),
+                temperature=self.ai_config.get('openai_temperature', current_app.config.get('OPENAI_TEMPERATURE', 0.3))
             )
             
             # Track costs (approximate)
@@ -164,7 +173,7 @@ class AIContentAnalyzer:
             confidence_score = max(0.0, min(1.0, similarity))
             
             # Only include if above threshold
-            threshold = current_app.config.get('LOCAL_AI_SIMILARITY_THRESHOLD', 0.5)
+            threshold = self.ai_config.get('local_ai_similarity_threshold', current_app.config.get('LOCAL_AI_SIMILARITY_THRESHOLD', 0.5))
             if confidence_score > threshold:
                 mappings.append({
                     'persona_id': persona.id,
@@ -235,7 +244,7 @@ class AIContentAnalyzer:
     def _create_openai_prompt(self, content: str, page: CrawledPage, personas: List[Persona]) -> str:
         """Create a structured prompt for OpenAI analysis."""
         # Truncate content if too long
-        max_content_length = current_app.config.get('AI_CONTENT_CHUNK_SIZE', 2000)
+        max_content_length = self.ai_config.get('ai_content_chunk_size', current_app.config.get('AI_CONTENT_CHUNK_SIZE', 2000))
         if len(content) > max_content_length:
             content = content[:max_content_length] + "..."
         
@@ -385,7 +394,7 @@ Respond with just a number (0-100):
         
         try:
             response = self.openai_client.chat.completions.create(
-                model=current_app.config.get('OPENAI_MODEL', 'gpt-3.5-turbo'),
+                model=self.ai_config.get('openai_model', current_app.config.get('OPENAI_MODEL', 'gpt-3.5-turbo')),
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=10,
                 temperature=0.1
@@ -402,8 +411,8 @@ Respond with just a number (0-100):
     
     def _check_cost_limits(self):
         """Check if AI usage is within cost limits."""
-        daily_limit = current_app.config.get('AI_DAILY_COST_LIMIT', 10.0)
-        monthly_limit = current_app.config.get('AI_MONTHLY_COST_LIMIT', 100.0)
+        daily_limit = self.ai_config.get('ai_daily_cost_limit', current_app.config.get('AI_DAILY_COST_LIMIT', 10.0))
+        monthly_limit = self.ai_config.get('ai_monthly_cost_limit', current_app.config.get('AI_MONTHLY_COST_LIMIT', 100.0))
         
         if self.daily_cost > daily_limit:
             raise CostLimitExceededError(f"Daily cost limit exceeded: ${self.daily_cost:.2f} > ${daily_limit}")
@@ -511,12 +520,12 @@ Respond with just a number (0-100):
     def get_analysis_stats(self) -> Dict:
         """Get statistics about AI analysis usage."""
         return {
-            'ai_enabled': current_app.config.get('AI_ENABLED', False),
-            'analysis_mode': current_app.config.get('AI_ANALYSIS_MODE', 'hybrid'),
+            'ai_enabled': self.ai_config.get('ai_enabled', current_app.config.get('AI_ENABLED', False)),
+            'analysis_mode': self.ai_config.get('ai_analysis_mode', current_app.config.get('AI_ANALYSIS_MODE', 'hybrid')),
             'openai_available': self.openai_client is not None,
             'local_ai_available': self.sentence_transformer is not None,
             'daily_cost': self.daily_cost,
             'monthly_cost': self.monthly_cost,
-            'daily_limit': current_app.config.get('AI_DAILY_COST_LIMIT', 10.0),
-            'monthly_limit': current_app.config.get('AI_MONTHLY_COST_LIMIT', 100.0)
+            'daily_limit': self.ai_config.get('ai_daily_cost_limit', current_app.config.get('AI_DAILY_COST_LIMIT', 10.0)),
+            'monthly_limit': self.ai_config.get('ai_monthly_cost_limit', current_app.config.get('AI_MONTHLY_COST_LIMIT', 100.0))
         }
