@@ -11,7 +11,7 @@ bp = Blueprint('auth', __name__)
 def login():
     """User login page."""
     if current_user.is_authenticated:
-        return redirect(url_for('organisations.list_organisations'))
+        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -36,7 +36,7 @@ def login():
             # Redirect to the page the user was trying to access
             next_page = request.args.get('next')
             if not next_page or url_parse(next_page).netloc != '':
-                next_page = url_for('organisations.list_organisations')
+                next_page = url_for('main.index')
             
             flash(f'Welcome back, {user.username}!', 'success')
             return redirect(next_page)

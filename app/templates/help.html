@@ -235,59 +235,30 @@
     </div>
 </div>
 
-<!-- Support Section -->
-<div class="row mt-4">
+<!-- Footer with GitHub and Contact Info -->
+<div class="row mt-5">
     <div class="col-12">
-        <div class="card bg-light">
-            <div class="card-body text-center">
-                <h5><i class="bi bi-headset"></i> Need More Help?</h5>
-                <p class="mb-3">If you can't find what you're looking for in this documentation, we're here to help!</p>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <i class="bi bi-envelope-fill text-primary fs-2"></i>
-                            <h6 class="mt-2">Email Support</h6>
-                            <p class="text-muted">
-                                <a href="mailto:support@personamap.com" class="text-decoration-none">
-                                    support@personamap.com
-                                </a>
-                            </p>
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="bi bi-info-circle"></i> About PersonaMap</h6>
+                        <p class="text-muted mb-3">
+                            PersonaMap is an open-source content persona mapping platform that helps you understand how your content aligns with your target audience personas.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="https://github.com/thehouseofbailey/personamapper" target="_blank" class="btn btn-outline-dark btn-sm">
+                                <i class="bi bi-github"></i> View on GitHub
+                            </a>
+                            <a href="mailto:thehouseofbailey@gmail.com" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-envelope"></i> Contact Developer
+                            </a>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <i class="bi bi-book-fill text-success fs-2"></i>
-                            <h6 class="mt-2">Documentation</h6>
-                            <p class="text-muted">
-                                <a href="#" class="text-decoration-none">
-                                    View Full Documentation
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <i class="bi bi-people-fill text-info fs-2"></i>
-                            <h6 class="mt-2">Community</h6>
-                            <p class="text-muted">
-                                <a href="#" class="text-decoration-none">
-                                    Join User Community
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <div class="row">
-                    <div class="col-12">
-                        <h6>System Information</h6>
-                        <p class="text-muted mb-0">
-                            PersonaMap v1.0 | 
-                            Your Role: <span class="badge bg-{{ 'danger' if current_user.is_admin() else 'warning' if current_user.is_editor() else 'secondary' }}">{{ current_user.get_role_display() }}</span> | 
-                            Last Login: {{ current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never' }}
+                        <hr class="my-3">
+                        <p class="text-muted small mb-0">
+                            Built with ❤️ by <strong>The House of Bailey</strong> | 
+                            <a href="https://github.com/thehouseofbailey/personamapper" class="text-decoration-none">Open Source</a> | 
+                            <a href="mailto:thehouseofbailey@gmail.com" class="text-decoration-none">Support</a>
                         </p>
                     </div>
                 </div>
@@ -295,4 +266,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

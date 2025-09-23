@@ -29,9 +29,24 @@ class Website(db.Model):
         """Get all users who have access to this website."""
         from app.models.user import User
         from app.models.user_website_role import UserWebsiteRole
-        return User.query.join(UserWebsiteRole).filter(
+        from app.models.user_organisation_role import UserOrganisationRole
+        from app.models.organisation import OrganisationWebsite
+        
+        # Get users with direct website roles
+        direct_users = User.query.join(UserWebsiteRole).filter(
             UserWebsiteRole.website_id == self.id
         ).all()
+        
+        # Get users through organisation membership
+        org_users = User.query.join(UserOrganisationRole).join(
+            OrganisationWebsite, UserOrganisationRole.organisation_id == OrganisationWebsite.organisation_id
+        ).filter(
+            OrganisationWebsite.website_id == self.id
+        ).all()
+        
+        # Combine and deduplicate users
+        all_users = list(set(direct_users + org_users))
+        return sorted(all_users, key=lambda u: u.username)
     
     def get_managers(self):
         """Get all website managers."""

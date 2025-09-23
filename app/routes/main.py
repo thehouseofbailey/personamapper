@@ -9,9 +9,7 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Home page - redirect to organisations if logged in, otherwise show landing page."""
-    if current_user.is_authenticated:
-        return redirect(url_for('organisations.list_organisations'))
+    """Home page - show landing page for unauthenticated users, home page for authenticated users."""
     return render_template('index.html')
 
 @bp.route('/dashboard')

@@ -108,6 +108,40 @@ class User(UserMixin, db.Model):
         ).first()
         return role.role if role else None
     
+    def get_effective_website_role(self, website_id):
+        """Get user's effective role for a website (direct or through organisation)."""
+        # Check for direct website role first
+        direct_role = self.get_website_role(website_id)
+        if direct_role:
+            return direct_role
+        
+        # Check for role through organisation membership
+        from app.models.website import Website
+        from app.models.organisation import OrganisationWebsite
+        website = Website.query.get(website_id)
+        if website:
+            org_ids = [ow.organisation_id for ow in website.organisation_websites]
+            for org_id in org_ids:
+                org_role = self.get_organisation_role(org_id)
+                if org_role:
+                    return org_role
+        
+        return None
+    
+    def get_effective_website_role_display(self, website_id):
+        """Get user's effective website role in a user-friendly format."""
+        role = self.get_effective_website_role(website_id)
+        if not role:
+            return 'No Access'
+        
+        role_display_map = {
+            'org_admin': 'Organisation Admin',
+            'website_manager': 'Website Manager', 
+            'website_viewer': 'Website Viewer'
+        }
+        
+        return role_display_map.get(role, role.replace('_', ' ').title())
+    
     def has_organisation_access(self, organisation_id):
         """Check if user has access to a specific organisation."""
         return self.is_super_admin or self.get_organisation_role(organisation_id) is not None
@@ -252,7 +286,7 @@ class User(UserMixin, db.Model):
     # Permission checking methods
     def can_manage_users(self):
         """Check if user can add, edit, or delete users."""
-        return self.is_admin()
+        return self.is_admin() or self.is_organisation_admin()
     
     def can_create_crawls(self):
         """Check if user can create and run crawls."""

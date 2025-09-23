@@ -105,8 +105,10 @@
                                     <br><small class="text-muted">{{ user.email }}</small>
                                 </td>
                                 <td>
-                                    {% set role = current_user.get_organisation_role(organisation.id) %}
-                                    <span class="badge bg-secondary">{{ role|title if role else 'Member' }}</span>
+                                    {% set role = user.get_organisation_role(organisation.id) %}
+                                    <span class="badge bg-{% if role == 'org_admin' %}danger{% elif role == 'website_manager' %}warning{% elif role == 'website_viewer' %}success{% else %}secondary{% endif %}">
+                                        {{ role.replace('_', ' ')|title if role else 'Member' }}
+                                    </span>
                                 </td>
                                 <td>
                                     {% if user.is_active %}

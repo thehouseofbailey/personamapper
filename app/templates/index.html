@@ -1,8 +1,176 @@
 {% extends "base.html" %}
 
-{% block title %}PersonaMap - Content Persona Mapping{% endblock %}
+{% block title %}
+{% if current_user.is_authenticated %}
+Home - PersonaMap
+{% else %}
+PersonaMap - Content Persona Mapping
+{% endif %}
+{% endblock %}
 
 {% block content %}
+{% if current_user.is_authenticated %}
+<!-- Authenticated User Home Page -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-house"></i> Welcome to PersonaMap</h1>
+                <p class="text-muted">Your content persona mapping platform</p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a href="{{ url_for('organisations.list_organisations') }}" class="btn btn-primary">
+                    <i class="bi bi-building"></i> Organizations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- App Functionality Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> What You Can Do</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-building fs-1 text-primary mb-2"></i>
+                            <h6>Manage Organizations</h6>
+                            <p class="text-muted small">Create and manage organizations with role-based access control</p>
+                            <a href="{{ url_for('organisations.list_organisations') }}" class="btn btn-outline-primary btn-sm">View Organizations</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-globe fs-1 text-success mb-2"></i>
+                            <h6>Website Management</h6>
+                            <p class="text-muted small">Add websites to organizations and manage user access permissions</p>
+                            <a href="{{ url_for('websites.list_websites') }}" class="btn btn-outline-success btn-sm">View Websites</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-people fs-1 text-info mb-2"></i>
+                            <h6>Create Personas</h6>
+                            <p class="text-muted small">Define target user personas with descriptions and keywords</p>
+                            <a href="{{ url_for('personas.list_personas') }}" class="btn btn-outline-info btn-sm">View Personas</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-search fs-1 text-warning mb-2"></i>
+                            <h6>Crawl Content</h6>
+                            <p class="text-muted small">Set up crawl jobs to automatically extract and analyze website content</p>
+                            <a href="{{ url_for('crawler.list_crawl_jobs') }}" class="btn btn-outline-warning btn-sm">View Crawls</a>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-diagram-3 fs-1 text-danger mb-2"></i>
+                            <h6>Content Mapping</h6>
+                            <p class="text-muted small">Intelligently map crawled content to user personas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-graph-up fs-1 text-secondary mb-2"></i>
+                            <h6>Generate Reports</h6>
+                            <p class="text-muted small">Create detailed reports and insights from your content mappings</p>
+                            <a href="{{ url_for('reports.dashboard') }}" class="btn btn-outline-secondary btn-sm">View Reports</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-people-fill fs-1 text-dark mb-2"></i>
+                            <h6>User Management</h6>
+                            <p class="text-muted small">Manage users with granular role-based permissions</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="text-center">
+                            <i class="bi bi-cpu fs-1 text-primary mb-2"></i>
+                            <h6>AI Integration</h6>
+                            <p class="text-muted small">Configure AI services for enhanced content analysis and mapping</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if current_user.is_organisation_admin() or current_user.is_super_admin %}
+                    <a href="{{ url_for('personas.create_persona') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Create New Persona
+                    </a>
+                    <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Start New Crawl Job
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('main.help') }}" class="btn btn-outline-info">
+                        <i class="bi bi-question-circle"></i> View Help & Documentation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-person"></i> Your Account</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Username:</strong>
+                        <p class="mb-2">{{ current_user.username }}</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Role:</strong>
+                        <p class="mb-2">
+                            {% if current_user.is_super_admin %}
+                                <span class="badge bg-danger">Super Admin</span>
+                            {% elif current_user.is_organisation_admin() %}
+                                <span class="badge bg-warning">Org Admin</span>
+                            {% elif current_user.is_website_manager() %}
+                                <span class="badge bg-info">Website Manager</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Website Viewer</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="d-grid">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-speedometer2"></i> Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Unauthenticated User Landing Page -->
 <div class="row justify-content-center mt-5">
     <div class="col-lg-8 text-center">
         <h1 class="display-4 text-primary mb-4">
@@ -71,4 +239,38 @@
         </div>
     </div>
 </div>
+{% endif %}
+
+<!-- Footer with GitHub and Contact Info -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body text-center py-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="bi bi-info-circle"></i> About PersonaMap</h6>
+                        <p class="text-muted mb-3">
+                            PersonaMap is an open-source content persona mapping platform that helps you understand how your content aligns with your target audience personas.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="https://github.com/thehouseofbailey/personamapper" target="_blank" class="btn btn-outline-dark btn-sm">
+                                <i class="bi bi-github"></i> View on GitHub
+                            </a>
+                            <a href="mailto:thehouseofbailey@gmail.com" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-envelope"></i> Contact Developer
+                            </a>
+                        </div>
+                        <hr class="my-3">
+                        <p class="text-muted small mb-0">
+                            Built with ❤️ by <strong>The House of Bailey</strong> | 
+                            <a href="https://github.com/thehouseofbailey/personamapper" class="text-decoration-none">Open Source</a> | 
+                            <a href="mailto:thehouseofbailey@gmail.com" class="text-decoration-none">Support</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

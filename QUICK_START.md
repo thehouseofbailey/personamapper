@@ -10,9 +10,17 @@ PersonaMap is a Flask web application with role-based access control (RBAC) for 
 git clone <repository-url>
 cd personamapper
 
-# Run the setup script
+# Run the setup script (handles everything automatically)
 ./setup.sh
 ```
+
+The setup script will:
+- Create a Python virtual environment
+- Install all dependencies
+- Set up the database with all necessary tables
+- Run all essential migrations (RBAC, crawl jobs, etc.)
+- Create default organisation, website, and admin user
+- Configure the system for immediate use
 
 ### Option 2: Manual Setup
 ```bash
@@ -23,7 +31,16 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run the application
+# 3. Set up database (run each migration)
+python migrations/add_rbac_system.py
+python migrations/create_crawl_job_personas_table.py
+python migrations/create_crawl_urls_table.py
+python migrations/add_crawl_timestamp_to_content_mappings.py
+python migrations/add_failure_tracking_to_crawl_urls.py
+python migrations/migrate_user_roles.py
+python migrations/add_ai_config_to_organisations.py
+
+# 4. Run the application
 python run.py
 ```
 

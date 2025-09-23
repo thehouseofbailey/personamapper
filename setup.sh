@@ -30,43 +30,62 @@ source .venv/bin/activate
 
 # Install dependencies
 echo "📥 Installing dependencies..."
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
-# Set up database
-echo "🗄️  Setting up database..."
-python -c "
-import sqlite3
+# Set up database and run migrations
+echo "🗄️  Setting up database and running migrations..."
+
+# Run essential migrations in order
+echo "  📝 Running database migrations..."
+
+# Function to run migration with error handling
+run_migration_safe() {
+    local migration_file=$1
+    local function_name=$2
+    local description=$3
+    
+    echo "    - $description..."
+    
+    if [ ! -f "$migration_file" ]; then
+        echo "      ⚠️  Migration file not found: $migration_file (skipping)"
+        return 0
+    fi
+    
+    if python3 -c "exec(open('$migration_file').read()); $function_name" 2>/dev/null; then
+        echo "      ✅ $description completed"
+    else
+        echo "      ⚠️  $description failed or already applied (continuing)"
+    fi
+}
+
+# 1. Run RBAC system migration
+run_migration_safe "migrations/add_rbac_system.py" "run_migration()" "Setting up RBAC system"
+
+# 2. Create crawl job personas table
+run_migration_safe "migrations/create_crawl_job_personas_table.py" "run_migration()" "Creating crawl job personas table"
+
+# 3. Create crawl URLs table  
+run_migration_safe "migrations/create_crawl_urls_table.py" "migrate_create_crawl_urls_table()" "Creating crawl URLs table"
+
+# 4. Add crawl timestamp to content mappings
+run_migration_safe "migrations/add_crawl_timestamp_to_content_mappings.py" "migrate_add_crawl_timestamp()" "Adding crawl timestamp to content mappings"
+
+# 5. Add failure tracking to crawl URLs
+run_migration_safe "migrations/add_failure_tracking_to_crawl_urls.py" "migrate_add_failure_tracking()" "Adding failure tracking to crawl URLs"
+
+# 6. Migrate user roles
+run_migration_safe "migrations/migrate_user_roles.py" "migrate_user_roles()" "Setting up user roles"
+
+# 7. Add AI config to organisations
+run_migration_safe "migrations/add_ai_config_to_organisations.py" "run_migration()" "Adding AI configuration to organisations"
+
+# Final setup - create default data
+echo "  🏗️  Creating default data..."
+python3 -c "
 from app import create_app, db
 from app.models import Organisation, Website, OrganisationWebsite, User
+from werkzeug.security import generate_password_hash
 
-# Add missing columns
-conn = sqlite3.connect('instance/personamap.db')
-cursor = conn.cursor()
-
-# Check and add columns
-cursor.execute('PRAGMA table_info(users)')
-columns = [row[1] for row in cursor.fetchall()]
-
-if 'is_super_admin' not in columns:
-    cursor.execute('ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT 0')
-    print('Added is_super_admin column to users')
-
-cursor.execute('PRAGMA table_info(crawl_jobs)')
-crawl_cols = [row[1] for row in cursor.fetchall()]
-if 'website_id' not in crawl_cols:
-    cursor.execute('ALTER TABLE crawl_jobs ADD COLUMN website_id INTEGER')
-    print('Added website_id column to crawl_jobs')
-
-cursor.execute('PRAGMA table_info(personas)')
-persona_cols = [row[1] for row in cursor.fetchall()]
-if 'website_id' not in persona_cols:
-    cursor.execute('ALTER TABLE personas ADD COLUMN website_id INTEGER')
-    print('Added website_id column to personas')
-
-conn.commit()
-conn.close()
-
-# Create tables and default data
 app = create_app()
 with app.app_context():
     db.create_all()
@@ -75,25 +94,37 @@ with app.app_context():
     if not Organisation.query.filter_by(name='Default Organisation').first():
         default_org = Organisation(
             name='Default Organisation',
-            description='Default organisation for existing data',
+            description='Default organisation for new installations',
             is_active=True
         )
         db.session.add(default_org)
-        print('Created default organisation')
+        print('  ✅ Created default organisation')
     
     if not Website.query.filter_by(name='Default Website').first():
         default_website = Website(
             name='Default Website', 
-            domain='legacy.local',
-            description='Default website for existing data',
+            domain='example.com',
+            description='Default website for new installations',
             is_active=True
         )
         db.session.add(default_website)
-        print('Created default website')
+        print('  ✅ Created default website')
+    
+    # Create default admin user
+    if not User.query.filter_by(username='admin').first():
+        admin_user = User(
+            username='admin',
+            email='admin@example.com',
+            is_super_admin=True,
+            is_active=True
+        )
+        admin_user.set_password('admin123')
+        db.session.add(admin_user)
+        print('  ✅ Created default admin user (admin/admin123)')
     
     db.session.commit()
     
-    # Link them
+    # Link default organisation to default website
     default_org = Organisation.query.filter_by(name='Default Organisation').first()
     default_website = Website.query.filter_by(name='Default Website').first()
     
@@ -107,22 +138,29 @@ with app.app_context():
         )
         db.session.add(org_website)
         db.session.commit()
-        print('Linked default organisation to default website')
+        print('  ✅ Linked default organisation to default website')
 
-print('Database setup completed!')
+print('✅ Database setup completed!')
 "
 
 echo ""
 echo "🎉 Setup completed successfully!"
 echo ""
-echo "To start the application:"
+echo "🚀 To start the application:"
 echo "  source .venv/bin/activate"
 echo "  python run.py"
 echo ""
-echo "The app will be available at: http://localhost:5002"
-echo "Default admin credentials: admin / admin123"
+echo "🌐 Access the application:"
+echo "  URL: http://localhost:5002"
+echo "  Default admin: admin / admin123"
 echo ""
-echo "📚 Documentation:"
+echo "📚 Next steps:"
+echo "  1. Log in with admin credentials"
+echo "  2. Create your organizations and websites"
+echo "  3. Set up user accounts with appropriate roles"
+echo "  4. Start creating personas and crawl jobs"
+echo ""
+echo "� Documentation:"
+echo "  - Quick Start: QUICK_START.md"
 echo "  - API Documentation: API_DOCUMENTATION.md"
-echo "  - RBAC Guide: RBAC_GUIDE.md" 
-echo "  - README: README.md"
+echo "  - RBAC Guide: RBAC_GUIDE.md"

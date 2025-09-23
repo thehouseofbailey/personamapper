@@ -22,7 +22,7 @@
                     </p>
                 </div>
                 <div class="btn-group" role="group">
-                    <a href="{{ url_for('organisations.create_user') }}" class="btn btn-success">
+                    <a href="{{ url_for('organisations.create_user', organisation_id=organisation.id) }}" class="btn btn-success">
                         <i class="bi bi-person-plus-fill"></i> Create User
                     </a>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
@@ -68,8 +68,8 @@
                                     </td>
                                     <td>{{ user_role.user.email or '-' }}</td>
                                     <td>
-                                        <span class="badge bg-{% if user_role.role == 'admin' %}danger{% else %}info{% endif %}">
-                                            {{ user_role.role|title }}
+                                        <span class="badge bg-{% if user_role.role == 'org_admin' %}danger{% elif user_role.role == 'website_manager' %}warning{% elif user_role.role == 'website_viewer' %}success{% else %}info{% endif %}">
+                                            {{ user_role.role.replace('_', ' ')|title }}
                                         </span>
                                     </td>
                                     <td>
@@ -78,6 +78,10 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             {% if user_role.user.id != current_user.id %}
+                                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                    data-bs-toggle="modal" data-bs-target="#editRoleModal{{ user_role.user.id }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
                                             <form style="display: inline;" method="POST" action="{{ url_for('organisations.remove_user', id=organisation.id, user_id=user_role.user.id) }}" 
                                                   onsubmit="return confirm('Are you sure you want to remove {{ user_role.user.username }} from this organisation?')">
                                                 <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -149,6 +153,46 @@
     </div>
 </div>
 
-
+<!-- Edit Role Modals -->
+{% for user_role in organisation_users %}
+{% if user_role.user.id != current_user.id %}
+<div class="modal fade" id="editRoleModal{{ user_role.user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('organisations.edit_user_role', id=organisation.id, user_id=user_role.user.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Role for {{ user_role.user.username }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Role</label>
+                        <select name="role" class="form-select" required>
+                            <option value="website_viewer" {% if user_role.role == 'website_viewer' %}selected{% endif %}>Website Viewer</option>
+                            <option value="website_manager" {% if user_role.role == 'website_manager' %}selected{% endif %}>Website Manager</option>
+                            <option value="org_admin" {% if user_role.role == 'org_admin' %}selected{% endif %}>Organisation Admin</option>
+                        </select>
+                        {% if user_role.user.is_super_admin %}
+                        <div class="mt-2">
+                            <small class="text-info">
+                                <i class="bi bi-info-circle"></i> This user is a Super Admin with global access. Organisation roles don't apply to Super Admins.
+                            </small>
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Choose the appropriate role for this user's responsibilities.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
 
 {% endblock %}

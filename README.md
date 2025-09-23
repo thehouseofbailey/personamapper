@@ -37,7 +37,7 @@ PersonaMap is an AI-powered web content analysis platform that automatically map
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/yourusername/personamap.git
-cd personamap
+cd personamapper
 ```
 ### Note: you may need to setup a virtual environment first
 Example for Mint Linux

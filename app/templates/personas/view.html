@@ -83,14 +83,14 @@
                                 {% for mapping in mappings %}
                                 <tr>
                                     <td>
-                                        <strong>{{ mapping.page.title or 'Untitled' }}</strong>
-                                        {% if mapping.page.word_count %}
-                                            <br><small class="text-muted">{{ mapping.page.word_count }} words</small>
+                                        <strong>{{ mapping.crawled_page.title or 'Untitled' }}</strong>
+                                        {% if mapping.crawled_page.word_count %}
+                                            <br><small class="text-muted">{{ mapping.crawled_page.word_count }} words</small>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{{ mapping.page.url }}" target="_blank" class="text-decoration-none">
-                                            {{ mapping.page.url[:50] }}{% if mapping.page.url|length > 50 %}...{% endif %}
+                                        <a href="{{ mapping.crawled_page.url }}" target="_blank" class="text-decoration-none">
+                                            {{ mapping.crawled_page.url[:50] }}{% if mapping.crawled_page.url|length > 50 %}...{% endif %}
                                             <i class="bi bi-box-arrow-up-right ms-1"></i>
                                         </a>
                                     </td>
@@ -186,7 +186,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <strong>Page Title:</strong>
-                        <p>{{ mapping.page.title or 'Untitled' }}</p>
+                        <p>{{ mapping.crawled_page.title or 'Untitled' }}</p>
                     </div>
                     <div class="col-md-6">
                         <strong>Confidence Score:</strong>
@@ -196,7 +196,7 @@
                 
                 <div class="mb-3">
                     <strong>URL:</strong>
-                    <p><a href="{{ mapping.page.url }}" target="_blank">{{ mapping.page.url }}</a></p>
+                    <p><a href="{{ mapping.crawled_page.url }}" target="_blank">{{ mapping.crawled_page.url }}</a></p>
                 </div>
                 
                 <div class="mb-3">

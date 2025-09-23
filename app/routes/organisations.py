@@ -184,7 +184,26 @@ def manage_users(id):
     # Get UserOrganisationRole objects to access both user and role information
     user_roles = UserOrganisationRole.query.filter_by(organisation_id=id).all()
     users = [ur.user for ur in user_roles]
-    all_users = User.query.filter_by(is_active=True).all()
+    
+    # Get available users based on current user's permissions
+    if current_user.is_admin():
+        # Super admin can see all users
+        all_users = User.query.filter_by(is_active=True).all()
+    else:
+        # Regular users can only see users from their own organisations
+        user_organisations = current_user.get_organisations()
+        user_org_ids = [org.id for org in user_organisations]
+        accessible_user_ids = set()
+        
+        for org_id in user_org_ids:
+            org_user_roles = UserOrganisationRole.query.filter_by(organisation_id=org_id).all()
+            accessible_user_ids.update([ur.user_id for ur in org_user_roles])
+        
+        all_users = User.query.filter(
+            User.id.in_(accessible_user_ids),
+            User.is_active == True
+        ).all() if accessible_user_ids else []
+    
     available_users = [u for u in all_users if u not in users]
     
     return render_template('organisations/manage_users.html', 
@@ -242,6 +261,50 @@ def remove_user(id, user_id):
         flash(f'User "{user.username}" removed from organisation.', 'success')
     except Exception as e:
         flash(f'Error removing user: {str(e)}', 'error')
+    
+    return redirect(url_for('organisations.manage_users', id=id))
+
+@bp.route('/<int:id>/users/<int:user_id>/edit-role', methods=['POST'])
+@login_required
+def edit_user_role(id, user_id):
+    """Edit user role in organisation."""
+    organisation = Organisation.query.get_or_404(id)
+    user = User.query.get_or_404(user_id)
+    
+    if not current_user.can_manage_organisation(id):
+        flash('You do not have permission to manage users in this organisation.', 'error')
+        return redirect(url_for('organisations.manage_users', id=id))
+    
+    new_role = request.form.get('role')
+    
+    # Check if trying to edit a super admin's role
+    if user.is_super_admin:
+        flash('Cannot change organisation roles for Super Admins. Super Admins have global access.', 'warning')
+        return redirect(url_for('organisations.manage_users', id=id))
+    
+    # Validate role
+    valid_roles = ['website_viewer', 'website_manager', 'org_admin']
+    if new_role not in valid_roles:
+        flash('Invalid role specified.', 'error')
+        return redirect(url_for('organisations.manage_users', id=id))
+    
+    try:
+        # Update the user role
+        from app.models.user_organisation_role import UserOrganisationRole
+        user_role = UserOrganisationRole.query.filter_by(
+            user_id=user_id,
+            organisation_id=id
+        ).first()
+        
+        if user_role:
+            old_role = user_role.role
+            user_role.role = new_role
+            db.session.commit()
+            flash(f'Updated {user.username}\'s role from {old_role.replace("_", " ").title()} to {new_role.replace("_", " ").title()}.', 'success')
+        else:
+            flash('User not found in this organisation.', 'error')
+    except Exception as e:
+        flash(f'Error updating user role: {str(e)}', 'error')
     
     return redirect(url_for('organisations.manage_users', id=id))
 
@@ -313,17 +376,31 @@ def remove_website(id, website_id):
     return redirect(url_for('organisations.manage_websites', id=id))
 
 @bp.route('/users/create', methods=['GET', 'POST'])
+@bp.route('/<int:organisation_id>/users/create', methods=['GET', 'POST'])
 @login_required
-def create_user():
+def create_user(organisation_id=None):
     """Create a new user (accessible from organisation user management)."""
     if not current_user.can_manage_users():
         flash('You do not have permission to create users.', 'error')
+        if organisation_id:
+            return redirect(url_for('organisations.manage_users', id=organisation_id))
         return redirect(url_for('organisations.list_organisations'))
     
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
+        role = request.form.get('role', 'website_viewer')  # Default to 'website_viewer' role
+        
+        # Handle organisation selection for super admin (not required for super_admin role)
+        if not organisation_id and current_user.is_admin() and role != 'super_admin':
+            organisation_id = request.form.get('organisation_id')
+            if not organisation_id:
+                flash('Please select an organisation.', 'error')
+                organisations = Organisation.query.filter_by(is_active=True).order_by(Organisation.name).all()
+                return render_template('organisations/create_user.html', 
+                                     organisation_id=None,
+                                     organisations=organisations)
         
         # Validation
         errors = []
@@ -347,19 +424,51 @@ def create_user():
         if errors:
             for error in errors:
                 flash(error, 'error')
-            return render_template('organisations/create_user.html')
+            organisations = []
+            if not organisation_id and current_user.is_admin():
+                organisations = Organisation.query.filter_by(is_active=True).order_by(Organisation.name).all()
+            return render_template('organisations/create_user.html', 
+                                 organisation_id=organisation_id,
+                                 organisations=organisations)
         
         # Create new user (as regular user by default)
         user = User(username=username, email=email, is_active=True)
         user.set_password(password)
         
+        # Handle super admin role creation (only super admins can create super admins)
+        if role == 'super_admin' and current_user.is_admin():
+            user.is_super_admin = True
+        
         db.session.add(user)
         db.session.commit()
+        
+        # Handle super admin creation (no organisation assignment needed)
+        if role == 'super_admin' and current_user.is_admin():
+            flash(f'Super Admin {username} created successfully! They have global access to all organisations.', 'success')
+            return redirect(url_for('organisations.list_organisations'))
+        
+        # If created from organisation context, automatically add user to that organisation
+        if organisation_id:
+            organisation = Organisation.query.get_or_404(organisation_id)
+            if current_user.can_manage_organisation(organisation_id) or current_user.is_admin():
+                organisation.add_user(user.id, role)  # Add with selected role
+                flash(f'User {username} created successfully and added to {organisation.name} as {role.replace("_", " ").title()}!', 'success')
+                return redirect(url_for('organisations.manage_users', id=organisation_id))
+            else:
+                flash(f'User {username} created successfully!', 'success')
+                return redirect(url_for('organisations.list_organisations'))
         
         flash(f'User {username} created successfully!', 'success')
         return redirect(url_for('organisations.list_organisations'))
     
-    return render_template('organisations/create_user.html')
+    # Get organisations list for super admin
+    organisations = []
+    if not organisation_id and current_user.is_admin():
+        organisations = Organisation.query.filter_by(is_active=True).order_by(Organisation.name).all()
+    
+    return render_template('organisations/create_user.html', 
+                         organisation_id=organisation_id,
+                         organisations=organisations)
 
 @bp.route('/<int:id>/dashboard')
 @login_required

@@ -255,7 +255,7 @@ def get_user_accessible_websites():
     if current_user.is_super_admin:
         return Website.query.filter_by(is_active=True).all()
     
-    return current_user.get_websites()
+    return current_user.get_accessible_websites()
 
 def get_user_accessible_crawl_jobs():
     """Get all crawl jobs the current user has access to."""
