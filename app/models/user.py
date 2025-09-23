@@ -194,22 +194,32 @@ class User(UserMixin, db.Model):
             if website_role == 'website_manager':
                 return True
             
-            # Check if user is org admin for any organisation that has access to this website
+            # Check if user has website management role for any organisation that has access to this website
             from app.models.website import Website
             website = Website.query.get(website_id)
             if website:
                 for org_website in website.organisation_websites:
-                    if self.is_organisation_admin(org_website.organisation_id):
+                    org_role = self.get_organisation_role(org_website.organisation_id)
+                    if org_role in ['org_admin', 'website_manager']:
                         return True
             
             return False
         else:
-            # Check if user is website manager for any website
+            # Check if user is website manager for any website or has website management org role
             from app.models.user_website_role import UserWebsiteRole
-            return (UserWebsiteRole.query.filter_by(
-                user_id=self.id,
-                role='website_manager'
-            ).first() is not None) or self.is_organisation_admin()
+            from app.models.user_organisation_role import UserOrganisationRole
+            
+            # Check direct website roles
+            if UserWebsiteRole.query.filter_by(user_id=self.id, role='website_manager').first():
+                return True
+            
+            # Check organisation roles for website management
+            org_roles = UserOrganisationRole.query.filter_by(user_id=self.id).all()
+            for org_role in org_roles:
+                if org_role.role in ['org_admin', 'website_manager']:
+                    return True
+            
+            return False
     
     def can_manage_organisation(self, organisation_id):
         """Check if user can manage a specific organisation."""
