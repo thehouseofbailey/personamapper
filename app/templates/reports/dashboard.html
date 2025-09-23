@@ -277,18 +277,30 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
+                    {% if current_user.can_create_personas() %}
                     <a href="{{ url_for('personas.create_persona') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Create Persona
                     </a>
+                    {% endif %}
+                    {% if current_user.can_create_crawls() %}
                     <a href="{{ url_for('crawler.create_crawl_job') }}" class="btn btn-success">
                         <i class="bi bi-plus-circle"></i> Create Crawl Job
                     </a>
+                    {% endif %}
                     <a href="{{ url_for('reports.persona_report') }}" class="btn btn-info">
                         <i class="bi bi-people"></i> Persona Report
                     </a>
                     <a href="{{ url_for('reports.content_analysis') }}" class="btn btn-outline-info">
                         <i class="bi bi-file-earmark-bar-graph"></i> Content Analysis
                     </a>
+                    {% if not current_user.can_create_personas() and not current_user.can_create_crawls() %}
+                    <div class="text-center py-2">
+                        <small class="text-muted">
+                            <i class="bi bi-eye"></i> You have view-only access.<br>
+                            Website managers can create personas and crawl jobs.
+                        </small>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

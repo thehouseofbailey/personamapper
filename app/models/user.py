@@ -308,6 +308,22 @@ class User(UserMixin, db.Model):
     
     def can_create_crawls(self):
         """Check if user can create and run crawls."""
+        if self.is_super_admin:
+            return True
+        
+        # Check if user has website management role in any organisation
+        from app.models.user_organisation_role import UserOrganisationRole
+        org_roles = UserOrganisationRole.query.filter_by(user_id=self.id).all()
+        for org_role in org_roles:
+            if org_role.role in ['org_admin', 'website_manager']:
+                return True
+        
+        # Check direct website roles
+        from app.models.user_website_role import UserWebsiteRole
+        if UserWebsiteRole.query.filter_by(user_id=self.id, role='website_manager').first():
+            return True
+            
+        # Fallback to legacy permissions
         return self.is_admin() or self.is_editor()
     
     def can_edit_crawls(self):
@@ -320,6 +336,22 @@ class User(UserMixin, db.Model):
     
     def can_create_personas(self):
         """Check if user can create personas."""
+        if self.is_super_admin:
+            return True
+        
+        # Check if user has website management role in any organisation
+        from app.models.user_organisation_role import UserOrganisationRole
+        org_roles = UserOrganisationRole.query.filter_by(user_id=self.id).all()
+        for org_role in org_roles:
+            if org_role.role in ['org_admin', 'website_manager']:
+                return True
+        
+        # Check direct website roles
+        from app.models.user_website_role import UserWebsiteRole
+        if UserWebsiteRole.query.filter_by(user_id=self.id, role='website_manager').first():
+            return True
+            
+        # Fallback to legacy permissions
         return self.is_admin() or self.is_editor()
     
     def can_edit_personas(self):
