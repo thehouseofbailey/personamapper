@@ -244,75 +244,75 @@ def create_user():
     
     return render_template('auth/create_user.html', roles=User.get_roles())
 
-@bp.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@bp.route('/users/<int:id>/edit', methods=['POST'])
 @login_required
 @admin_required
-def edit_user(user_id):
-    """Edit user."""
-    user = User.query.get_or_404(user_id)
+def edit_user(id):
+    """Edit user details."""
+    user = User.query.get_or_404(id)
     
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        role = request.form.get('role')
-        is_active = bool(request.form.get('is_active'))
-        
-        # Validation
-        errors = []
-        
-        if not username or len(username) < 3:
-            errors.append('Username must be at least 3 characters long.')
-        
-        if not email or '@' not in email:
-            errors.append('Please enter a valid email address.')
-        
-        if role not in [r[0] for r in User.get_roles()]:
-            errors.append('Invalid role selected.')
-        
-        # Check if username or email already exists (excluding current user)
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user and existing_user.id != user.id:
-            errors.append('Username already exists.')
-        
+    # Prevent users from modifying their own super admin status
+    if user.id == current_user.id and 'is_super_admin' in request.form:
+        flash('You cannot modify your own super admin status.', 'error')
+        return redirect(url_for('auth.manage_users'))
+    
+    # Get form data
+    email = request.form.get('email', '').strip()
+    new_password = request.form.get('new_password', '').strip()
+    is_super_admin = 'is_super_admin' in request.form and user.id != current_user.id
+    
+    # Validation
+    errors = []
+    
+    if email and '@' not in email:
+        errors.append('Please enter a valid email address.')
+    
+    # Check if email already exists (excluding current user)
+    if email:
         existing_email = User.query.filter_by(email=email).first()
         if existing_email and existing_email.id != user.id:
             errors.append('Email address already registered.')
-        
-        if errors:
-            for error in errors:
-                flash(error, 'error')
-            return render_template('auth/edit_user.html', user=user, roles=User.get_roles())
-        
-        # Update user
-        user.username = username
-        user.email = email
-        user.role = role
-        user.is_active = is_active
-        
-        db.session.commit()
-        
-        flash(f'User {username} updated successfully!', 'success')
+    
+    # Check if we're removing the last super admin
+    if user.is_super_admin and not is_super_admin:
+        super_admin_count = User.query.filter_by(is_super_admin=True).count()
+        if super_admin_count <= 1:
+            errors.append('Cannot remove the last super admin.')
+    
+    if errors:
+        for error in errors:
+            flash(error, 'error')
         return redirect(url_for('auth.manage_users'))
     
-    return render_template('auth/edit_user.html', user=user, roles=User.get_roles())
+    # Update user
+    user.email = email or user.email
+    user.is_super_admin = is_super_admin
+    
+    if new_password:
+        user.set_password(new_password)
+        
+    db.session.commit()
+    
+    flash(f'User {user.username} updated successfully!', 'success')
+    return redirect(url_for('auth.manage_users'))
 
-@bp.route('/users/<int:user_id>/delete', methods=['POST'])
+@bp.route('/users/<int:id>/delete', methods=['POST'])
 @login_required
 @admin_required
-def delete_user(user_id):
+def delete_user(id):
     """Delete user."""
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(id)
     
     # Prevent deleting yourself
     if user.id == current_user.id:
         flash('You cannot delete your own account.', 'error')
         return redirect(url_for('auth.manage_users'))
     
-    # Prevent deleting the last admin
-    if user.is_admin():
-        admin_count = User.query.filter_by(role=User.ROLE_ADMIN, is_active=True).count()
-        if admin_count <= 1:
-            flash('Cannot delete the last admin user.', 'error')
+    # Prevent deleting the last super admin
+    if user.is_super_admin:
+        super_admin_count = User.query.filter_by(is_super_admin=True).count()
+        if super_admin_count <= 1:
+            flash('Cannot delete the last super admin user.', 'error')
             return redirect(url_for('auth.manage_users'))
     
     username = user.username
@@ -322,17 +322,48 @@ def delete_user(user_id):
     flash(f'User {username} deleted successfully!', 'success')
     return redirect(url_for('auth.manage_users'))
 
-@bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
+@bp.route('/users/<int:id>/activate', methods=['POST'])
 @login_required
 @admin_required
-def admin_reset_password(user_id):
+def activate_user(id):
+    """Activate user."""
+    user = User.query.get_or_404(id)
+    
+    user.is_active = True
+    db.session.commit()
+    
+    flash(f'User {user.username} activated successfully!', 'success')
+    return redirect(url_for('auth.manage_users'))
+
+@bp.route('/users/<int:id>/deactivate', methods=['POST'])
+@login_required
+@admin_required
+def deactivate_user(id):
+    """Deactivate user."""
+    user = User.query.get_or_404(id)
+    
+    # Prevent deactivating yourself
+    if user.id == current_user.id:
+        flash('You cannot deactivate your own account.', 'error')
+        return redirect(url_for('auth.manage_users'))
+    
+    user.is_active = False
+    db.session.commit()
+    
+    flash(f'User {user.username} deactivated successfully!', 'success')
+    return redirect(url_for('auth.manage_users'))
+
+@bp.route('/users/<int:id>/reset-password', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(id):
     """Admin reset user password."""
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(id)
     new_password = request.form.get('new_password')
     
     if not new_password or len(new_password) < 6:
         flash('Password must be at least 6 characters long.', 'error')
-        return redirect(url_for('auth.edit_user', user_id=user_id))
+        return redirect(url_for('auth.manage_users'))
     
     user.set_password(new_password)
     db.session.commit()

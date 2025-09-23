@@ -1,18 +1,5 @@
 # Organisation-Specific AI Configuration
 
-## Overview
-
-The PersonaMap application now supports **per-organisation AI configuration** instead of global settings. This allows different organizations to have their own AI analysis settings, API keys, and cost controls.
-
-## Migration from Global Settings
-
-The AI configuration has been moved from the `.env` file to the database as organisation-specific settings. The old `.env` AI settings are now commented out and deprecated.
-
-### What Changed
-
-- **Before**: Global AI settings in `.env` file applied to all organisations
-- **After**: Each organisation can configure its own AI settings independently
-
 ## AI Integration Guide (Updated for Organisation-Specific Config)
 
 PersonaMap supports multiple AI analysis modes to automatically map website content to personas, with each organisation able to configure their own settings:

@@ -380,8 +380,8 @@ def remove_website(id, website_id):
 @login_required
 def create_user(organisation_id=None):
     """Create a new user (accessible from organisation user management)."""
-    if not current_user.can_manage_users():
-        flash('You do not have permission to create users.', 'error')
+    if not current_user.can_manage_organisation_users(organisation_id):
+        flash('You do not have permission to create users in this organisation.', 'error')
         if organisation_id:
             return redirect(url_for('organisations.manage_users', id=organisation_id))
         return redirect(url_for('organisations.list_organisations'))

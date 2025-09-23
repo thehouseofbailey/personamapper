@@ -285,8 +285,16 @@ class User(UserMixin, db.Model):
     
     # Permission checking methods
     def can_manage_users(self):
-        """Check if user can add, edit, or delete users."""
-        return self.is_admin() or self.is_organisation_admin()
+        """Check if user can add, edit, or delete users globally (super admin only)."""
+        return self.is_super_admin
+    
+    def can_manage_organisation_users(self, organisation_id=None):
+        """Check if user can manage users within a specific organisation."""
+        if self.is_super_admin:
+            return True
+        if organisation_id and self.is_organisation_admin(organisation_id):
+            return True
+        return False
     
     def can_create_crawls(self):
         """Check if user can create and run crawls."""

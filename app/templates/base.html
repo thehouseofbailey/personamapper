@@ -37,6 +37,18 @@
         .status-running { color: #0d6efd; }
         .status-inactive { color: #6c757d; }
         .status-failed { color: #dc3545; }
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -85,8 +97,11 @@
                             <li><a class="dropdown-item" href="{{ url_for('organisations.create_user') }}">
                                 <i class="bi bi-person-plus"></i> Create User
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('organisations.list_organisations') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.manage_users') }}">
                                 <i class="bi bi-people-fill"></i> User Management
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('organisations.list_organisations') }}">
+                                <i class="bi bi-building"></i> Organisation Management
                             </a></li>
                         </ul>
                     </li>
