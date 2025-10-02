@@ -42,7 +42,9 @@ flask init-db
 ### 4. Run the application
 python run.py
 
-Or with Docker:
+## 🐳 Docker Deployment
+
+### Local Docker
 ```bash
 # Build the image
 docker build --target production -t personamap:latest .
@@ -64,7 +66,32 @@ docker run -d --name personamap-test \
     -p 8080:8080 \
     personamap:latest
 ```
+
+### Google Cloud Run
+```bash
+# Build and push to Artifact Registry
+docker build --target production -t europe-west1-docker.pkg.dev/YOUR_PROJECT_ID/personamap-repo/personamap:latest .
+docker push europe-west1-docker.pkg.dev/YOUR_PROJECT_ID/personamap-repo/personamap:latest
+
+# Deploy to Cloud Run
+gcloud run deploy personamap \
+  --image=europe-west1-docker.pkg.dev/YOUR_PROJECT_ID/personamap-repo/personamap:latest \
+  --platform=managed \
+  --region=europe-west1 \
+  --allow-unauthenticated \
+  --set-env-vars=FLASK_ENV=production,SECRET_KEY=your-secret-key,DATABASE_URL=sqlite:////app/instance/personamap.db
+
+# Initialize database (one-time)
+gcloud run jobs create personamap-initdb \
+  --image=europe-west1-docker.pkg.dev/YOUR_PROJECT_ID/personamap-repo/personamap:latest \
+  --region=europe-west1 \
+  --set-env-vars=FLASK_APP=run.py,FLASK_ENV=production,SECRET_KEY=your-secret-key,DATABASE_URL=sqlite:////app/instance/personamap.db \
+  --command="flask" --args="init-db"
+
+gcloud run jobs execute personamap-initdb --region=europe-west1
 ```
+
+> **Note:** Replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID.
 
 ## 📋 System Requirements
 
