@@ -23,46 +23,64 @@
             <div class="card-body">
                 <form method="POST">
                     {{ form.hidden_tag() }}
-                    
+
                     <div class="mb-3">
                         {{ form.title.label(class="form-label") }}
                         {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
                         {% if form.title.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.title.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                         <div class="form-text">A clear, descriptive name for this persona</div>
                     </div>
-                    
+
+                    <div class="mb-3">
+                        <label for="website_id" class="form-label">Website <span class="text-danger">*</span></label>
+                        <select name="website_id" id="website_id" class="form-select" required>
+                            <option value="">Select a website...</option>
+                            {% for website in accessible_websites %}
+                            <option value="{{ website.id }}" {% if website.id==selected_website_id %}selected{% endif
+                                %}>
+                                {{ website.name }} ({{ website.domain }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the website this persona will be associated with</div>
+                    </div>
+
                     <div class="mb-3">
                         {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""),
+                        rows="4") }}
                         {% if form.description.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.description.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        <div class="invalid-feedback">
+                            {% for error in form.description.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
-                        <div class="form-text">Detailed description of this persona's characteristics and behaviors</div>
+                        <div class="form-text">Detailed description of this persona's characteristics and behaviors
+                        </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         {{ form.keywords.label(class="form-label") }}
-                        {{ form.keywords(class="form-control" + (" is-invalid" if form.keywords.errors else ""), rows="3") }}
+                        {{ form.keywords(class="form-control" + (" is-invalid" if form.keywords.errors else ""),
+                        rows="3") }}
                         {% if form.keywords.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.keywords.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        <div class="invalid-feedback">
+                            {% for error in form.keywords.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
-                        <div class="form-text">Comma-separated keywords that identify content relevant to this persona</div>
+                        <div class="form-text">Comma-separated keywords that identify content relevant to this persona
+                        </div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('personas.list_personas') }}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">
@@ -73,7 +91,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <div class="card">
             <div class="card-body">
@@ -100,7 +118,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <div class="card mt-3">
             <div class="card-body">
                 <h6 class="card-title">

@@ -25,23 +25,48 @@ def list_personas():
 @login_required
 def create_persona():
     """Create a new persona."""
+    from app.models import Website
+    from flask_login import current_user
+    
+    # Get website_id from query parameter or form
+    website_id = request.args.get('website_id', type=int)
+    
+    # Get user's accessible websites
+    accessible_websites = []
+    user_orgs = current_user.get_organisations()
+    for org in user_orgs:
+        accessible_websites.extend(org.get_websites())
+    accessible_websites = list({w.id: w for w in accessible_websites}.values())
+    
     form = PersonaForm()
     
     if form.validate_on_submit():
-        # Create new persona
-        persona = Persona(
-            title=form.title.data,
-            description=form.description.data,
-            keywords=form.keywords.data
-        )
+        selected_website_id = request.form.get('website_id', type=int)
         
-        db.session.add(persona)
-        db.session.commit()
-        
-        flash(f'Persona "{persona.title}" created successfully!', 'success')
-        return redirect(url_for('personas.view_persona', id=persona.id))
+        # Validation
+        if not selected_website_id:
+            flash('Website selection is required.', 'error')
+        elif selected_website_id not in [w.id for w in accessible_websites]:
+            flash('You do not have access to the selected website.', 'error')
+        else:
+            # Create new persona
+            persona = Persona(
+                title=form.title.data,
+                description=form.description.data,
+                keywords=form.keywords.data,
+                website_id=selected_website_id
+            )
+            
+            db.session.add(persona)
+            db.session.commit()
+            
+            flash(f'Persona "{persona.title}" created successfully!', 'success')
+            return redirect(url_for('personas.view_persona', id=persona.id))
     
-    return render_template('personas/create.html', form=form)
+    return render_template('personas/create.html', 
+                         form=form, 
+                         accessible_websites=accessible_websites,
+                         selected_website_id=website_id)
 
 @bp.route('/<int:id>')
 @login_required

@@ -99,6 +99,36 @@ class Organisation(db.Model):
             db.session.delete(user_role)
             db.session.commit()
     
+    def add_website(self, website_id):
+        """Add a website to this organisation."""
+        existing_association = OrganisationWebsite.query.filter_by(
+            organisation_id=self.id,
+            website_id=website_id
+        ).first()
+        
+        if not existing_association:
+            org_website = OrganisationWebsite(
+                organisation_id=self.id,
+                website_id=website_id
+            )
+            db.session.add(org_website)
+            db.session.commit()
+            return True
+        return False
+    
+    def remove_website(self, website_id):
+        """Remove a website from this organisation."""
+        org_website = OrganisationWebsite.query.filter_by(
+            organisation_id=self.id,
+            website_id=website_id
+        ).first()
+        
+        if org_website:
+            db.session.delete(org_website)
+            db.session.commit()
+            return True
+        return False
+    
     def get_ai_config(self):
         """Get AI configuration for this organisation."""
         return {
