@@ -6,10 +6,11 @@ services:
       context: .
       target: development
     ports:
-      - "5002:5002"
+      - "8080:8080"
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - PORT=8080
       - DATABASE_URL=sqlite:///instance/personamap.db
       - SECRET_KEY=dev-secret-key-change-in-production
       - AI_ENABLED=false
@@ -20,7 +21,7 @@ services:
       - personamap_logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

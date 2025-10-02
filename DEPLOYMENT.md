@@ -40,15 +40,18 @@ copy .env.example .env  # On Windows
 # cp .env.example .env  # On Mac/Linux
 # Edit .env with your settings
 
-# Initialize database and run all migrations (this also creates the admin user)
+
+# Initialize database (one-time, do not repeat on every start)
 $env:FLASK_APP="run.py"; python -m flask init-db  # On Windows PowerShell
 # export FLASK_APP=run.py; flask init-db          # On Mac/Linux
+
+> **Note:** Only run `flask init-db` once to set up the database. Do **not** call `db.create_all()` on every app start.
 
 # Start application
 python run.py
 ```
 
-Visit `http://localhost:5002` with credentials: `admin` / `admin123`
+Visit `http://localhost:8080` with credentials: `admin` / `admin123`
 
 ---
 
@@ -73,12 +76,29 @@ docker-compose logs -f personamap
 docker-compose down
 ```
 
-**The Docker entrypoint should run:**
+
+**Docker Workflow:**
 ```bash
-$env:FLASK_APP="run.py"; python -m flask init-db
-python run.py
+# Build the image
+docker build --target production -t personamap:latest .
+
+# Initialize the database (one-time)
+docker run --rm \
+  -e FLASK_APP=run.py \
+  -e FLASK_ENV=production \
+  -e DATABASE_URL=sqlite:////app/instance/personamap.db \
+  -e SECRET_KEY=your-secret-key \
+  personamap:latest \
+  flask init-db
+
+# Start the app
+docker run -d --name personamap-test \
+  -e FLASK_ENV=production \
+  -e DATABASE_URL=sqlite:////app/instance/personamap.db \
+  -e SECRET_KEY=your-secret-key \
+  -p 8080:8080 \
+  personamap:latest
 ```
-*(Or the Linux equivalent in your Dockerfile/entrypoint script)*
 
 ---
 
@@ -94,7 +114,7 @@ docker build --target production -t personamap:latest .
 # Run with production settings
 docker run -d \
   --name personamap \
-  -p 5002:5002 \
+  -p 8080:8080 \
   --env-file .env.production \
   -v personamap_data:/app/instance \
   personamap:latest
@@ -226,7 +246,7 @@ aws rds create-db-instance \
       "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/personamap:latest",
       "portMappings": [
         {
-          "containerPort": 5002,
+          "containerPort": 8080,
           "protocol": "tcp"
         }
       ],
@@ -266,7 +286,7 @@ aws ecs create-service \
 aws elbv2 create-target-group \
   --name personamap-targets \
   --protocol HTTP \
-  --port 5002 \
+  --port 8080 \
   --vpc-id vpc-xxxxxxxxx \
   --target-type ip \
   --health-check-path /api/health
@@ -321,7 +341,7 @@ spec:
       - name: personamap
         image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/personamap:latest
         ports:
-        - containerPort: 5002
+        - containerPort: 8080
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -348,7 +368,7 @@ spec:
     app: personamap
   ports:
   - port: 80
-    targetPort: 5002
+    targetPort: 8080
   type: LoadBalancer
 ```
 
@@ -715,19 +735,19 @@ docker-compose logs -f personamap
 
 # Production deployment
 docker build --target production -t personamap:latest .
-docker run -d --name personamap -p 5002:5002 --env-file .env.production personamap:latest
+docker run -d --name personamap -p 8080:8080 --env-file .env.production personamap:latest
 
 # Database backup
 pg_dump $DATABASE_URL > backup.sql
 
 # Health check
-curl http://localhost:5002/api/health
+curl http://localhost:8080/api/health
 ```
 
 ### Important URLs
-- **Application**: `http://localhost:5002`
-- **Health Check**: `http://localhost:5002/api/health`
-- **API Status**: `http://localhost:5002/api/ai/status`
+- **Application**: `http://localhost:8080`
+- **Health Check**: `http://localhost:8080/api/health`
+- **API Status**: `http://localhost:8080/api/ai/status`
 - **API Documentation**: Available in `API_DOCUMENTATION.md`
 
 ### Default Credentials

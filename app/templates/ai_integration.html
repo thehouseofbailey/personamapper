@@ -41,13 +41,14 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-9">
         <!-- Overview -->
         <section id="overview" class="mb-5">
             <h2>Overview</h2>
-            <p>PersonaMap now supports AI-powered content analysis for more accurate and semantic persona mapping. The AI integration provides several analysis modes:</p>
-            
+            <p>PersonaMap now supports AI-powered content analysis for more accurate and semantic persona mapping. The
+                AI integration provides several analysis modes:</p>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="card mb-3">
@@ -95,10 +96,10 @@
         <!-- Quick Setup -->
         <section id="quick-setup" class="mb-5">
             <h2>Quick Setup</h2>
-            
+
             <h4>1. Install Dependencies</h4>
             <pre class="bg-light p-3 rounded"><code>pip install -r requirements.txt</code></pre>
-            
+
             <p>New AI dependencies include:</p>
             <ul>
                 <li><code>openai>=1.0.0</code> - For OpenAI GPT integration</li>
@@ -107,11 +108,11 @@
                 <li><code>numpy>=1.21.0</code> - For numerical operations</li>
                 <li><code>scikit-learn>=1.0.0</code> - For similarity calculations</li>
             </ul>
-            
+
             <h4>2. Configure Environment</h4>
             <p>Copy the example environment file:</p>
             <pre class="bg-light p-3 rounded"><code>cp .env.example .env</code></pre>
-            
+
             <p>Edit <code>.env</code> to configure AI settings:</p>
             <pre class="bg-light p-3 rounded"><code># Enable AI analysis
 AI_ENABLED=true
@@ -124,7 +125,7 @@ OPENAI_MODEL=gpt-3.5-turbo
 # Cost controls
 AI_DAILY_COST_LIMIT=10.0
 AI_MONTHLY_COST_LIMIT=100.0</code></pre>
-            
+
             <h4>3. Start the Application</h4>
             <pre class="bg-light p-3 rounded"><code>python run.py</code></pre>
         </section>
@@ -132,15 +133,17 @@ AI_MONTHLY_COST_LIMIT=100.0</code></pre>
         <!-- Analysis Modes -->
         <section id="analysis-modes" class="mb-5">
             <h2>Analysis Modes</h2>
-            
+
             <div class="accordion" id="analysisModesAccordion">
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#keywordMode">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#keywordMode">
                             <i class="bi bi-search me-2"></i> Keyword Mode (Default)
                         </button>
                     </h2>
-                    <div id="keywordMode" class="accordion-collapse collapse show" data-bs-parent="#analysisModesAccordion">
+                    <div id="keywordMode" class="accordion-collapse collapse show"
+                        data-bs-parent="#analysisModesAccordion">
                         <div class="accordion-body">
                             <p><strong>Description:</strong> Traditional keyword matching</p>
                             <p><strong>Pros:</strong> Fast, free, no external dependencies</p>
@@ -151,17 +154,19 @@ AI_ANALYSIS_MODE=keyword</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiMode">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#aiMode">
                             <i class="bi bi-robot me-2"></i> AI Mode (OpenAI)
                         </button>
                     </h2>
                     <div id="aiMode" class="accordion-collapse collapse" data-bs-parent="#analysisModesAccordion">
                         <div class="accordion-body">
                             <p><strong>Description:</strong> Uses OpenAI GPT for semantic content analysis</p>
-                            <p><strong>Pros:</strong> High accuracy, semantic understanding, natural language reasoning</p>
+                            <p><strong>Pros:</strong> High accuracy, semantic understanding, natural language reasoning
+                            </p>
                             <p><strong>Cons:</strong> Costs money, requires internet, slower</p>
                             <p><strong>Setup:</strong> Requires OpenAI API key</p>
                             <pre class="bg-light p-2 rounded small"><code>AI_ENABLED=true
@@ -170,10 +175,11 @@ OPENAI_API_KEY=your-key-here</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hybridMode">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#hybridMode">
                             <i class="bi bi-layers me-2"></i> Hybrid Mode (Recommended)
                         </button>
                     </h2>
@@ -189,10 +195,11 @@ OPENAI_API_KEY=your-key-here</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#localMode">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#localMode">
                             <i class="bi bi-house me-2"></i> Local AI Mode
                         </button>
                     </h2>
@@ -208,14 +215,16 @@ LOCAL_AI_MODEL=all-MiniLM-L6-v2</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#validationMode">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#validationMode">
                             <i class="bi bi-shield-check me-2"></i> Validation Mode
                         </button>
                     </h2>
-                    <div id="validationMode" class="accordion-collapse collapse" data-bs-parent="#analysisModesAccordion">
+                    <div id="validationMode" class="accordion-collapse collapse"
+                        data-bs-parent="#analysisModesAccordion">
                         <div class="accordion-body">
                             <p><strong>Description:</strong> AI validates keyword-based mappings</p>
                             <p><strong>Pros:</strong> Improves keyword accuracy, cost-effective</p>
@@ -233,7 +242,7 @@ OPENAI_API_KEY=your-key-here</code></pre>
         <!-- Configuration -->
         <section id="configuration" class="mb-5">
             <h2>Configuration Options</h2>
-            
+
             <div class="row">
                 <div class="col-md-6">
                     <h5>OpenAI Settings</h5>
@@ -250,7 +259,7 @@ OPENAI_API_KEY=your-key-here</code></pre>
                         <li><code>AI_DAILY_COST_LIMIT</code> - Daily spending limit (USD)</li>
                         <li><code>AI_MONTHLY_COST_LIMIT</code> - Monthly spending limit (USD)</li>
                     </ul>
-                    
+
                     <h5>Local AI Settings</h5>
                     <ul class="list-unstyled">
                         <li><code>LOCAL_AI_MODEL</code> - Sentence transformer model</li>
@@ -263,7 +272,7 @@ OPENAI_API_KEY=your-key-here</code></pre>
         <!-- API Endpoints -->
         <section id="api-endpoints" class="mb-5">
             <h2>API Endpoints</h2>
-            
+
             <div class="card mb-3">
                 <div class="card-header">
                     <h6 class="mb-0">Check AI Status</h6>
@@ -273,7 +282,7 @@ OPENAI_API_KEY=your-key-here</code></pre>
                     <p class="small mb-0">Returns current AI configuration and availability.</p>
                 </div>
             </div>
-            
+
             <div class="card mb-3">
                 <div class="card-header">
                     <h6 class="mb-0">Analyze Content</h6>
@@ -295,7 +304,7 @@ Content-Type: application/json
         <!-- Cost Management -->
         <section id="cost-management" class="mb-5">
             <h2>Cost Management</h2>
-            
+
             <div class="alert alert-info">
                 <h6><i class="bi bi-info-circle"></i> OpenAI Costs</h6>
                 <ul class="mb-0">
@@ -305,7 +314,7 @@ Content-Type: application/json
                     <li>Cost tracking in application logs</li>
                 </ul>
             </div>
-            
+
             <h5>Cost Optimization Tips</h5>
             <ol>
                 <li>Use <code>hybrid</code> mode for best cost/accuracy balance</li>
@@ -319,15 +328,17 @@ Content-Type: application/json
         <!-- Troubleshooting -->
         <section id="troubleshooting" class="mb-5">
             <h2>Troubleshooting</h2>
-            
+
             <div class="accordion" id="troubleshootingAccordion">
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiNotWorking">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#aiNotWorking">
                             AI not working
                         </button>
                     </h2>
-                    <div id="aiNotWorking" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div id="aiNotWorking" class="accordion-collapse collapse"
+                        data-bs-parent="#troubleshootingAccordion">
                         <div class="accordion-body">
                             <ul>
                                 <li>Check <code>AI_ENABLED=true</code> in <code>.env</code></li>
@@ -338,10 +349,11 @@ Content-Type: application/json
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#highCosts">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#highCosts">
                             High costs
                         </button>
                     </h2>
@@ -356,14 +368,16 @@ Content-Type: application/json
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#poorAccuracy">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#poorAccuracy">
                             Poor accuracy
                         </button>
                     </h2>
-                    <div id="poorAccuracy" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div id="poorAccuracy" class="accordion-collapse collapse"
+                        data-bs-parent="#troubleshootingAccordion">
                         <div class="accordion-body">
                             <ul>
                                 <li>Try <code>hybrid</code> mode for best results</li>
@@ -380,7 +394,7 @@ Content-Type: application/json
         <!-- Security -->
         <section id="security" class="mb-5">
             <h2>Security Considerations</h2>
-            
+
             <div class="row">
                 <div class="col-md-6">
                     <h5>API Key Security</h5>
@@ -406,7 +420,7 @@ Content-Type: application/json
         <!-- Examples -->
         <section id="examples" class="mb-5">
             <h2>Examples</h2>
-            
+
             <div class="row">
                 <div class="col-md-4">
                     <div class="card">
@@ -419,7 +433,7 @@ AI_ANALYSIS_MODE=keyword</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
@@ -433,7 +447,7 @@ AI_DAILY_COST_LIMIT=5.0</code></pre>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
@@ -447,14 +461,14 @@ LOCAL_AI_MODEL=all-MiniLM-L6-v2</code></pre>
                     </div>
                 </div>
             </div>
-            
+
             <div class="mt-4">
                 <h5>Testing AI Analysis</h5>
                 <pre class="bg-light p-3 rounded"><code># Test the AI status endpoint
-curl http://localhost:5002/api/ai/status
+curl http://localhost:8080/api/ai/status
 
 # Test content analysis
-curl -X POST http://localhost:5002/api/ai/analyze \
+curl -X POST http://localhost:8080/api/ai/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "content": "This article discusses API development best practices for software engineers and technical teams.",
@@ -476,8 +490,9 @@ curl -X POST http://localhost:5002/api/ai/analyze \
                     <li>Monitor costs and performance metrics</li>
                 </ol>
             </div>
-            
-            <p class="text-muted">The AI integration is designed to enhance PersonaMap's accuracy while maintaining backward compatibility with existing keyword-based analysis.</p>
+
+            <p class="text-muted">The AI integration is designed to enhance PersonaMap's accuracy while maintaining
+                backward compatibility with existing keyword-based analysis.</p>
         </section>
     </div>
 </div>

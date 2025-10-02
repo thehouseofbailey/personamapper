@@ -47,8 +47,6 @@ def create_app():
     app.register_blueprint(organisations_bp, url_prefix='/organisations')
     app.register_blueprint(websites_bp, url_prefix='/websites')
     
-    # Create database tables
-    with app.app_context():
-        db.create_all()
+
     
     return app

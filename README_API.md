@@ -70,7 +70,7 @@ This API is designed specifically for JavaScript integration via Google Tag Mana
 
 ### 1. Test the API
 ```bash
-# The Flask app should be running on http://localhost:5002
+# The Flask app should be running on http://localhost:8080
 # Open test_api.html in your browser to test all endpoints
 open test_api.html
 ```
@@ -157,16 +157,16 @@ PersonaMap/
 ### API Testing with curl
 ```bash
 # Health check
-curl "http://localhost:5002/api/health"
+curl "http://localhost:8080/api/health"
 
 # Get page personas
-curl "http://localhost:5002/api/personas/page?url=https://example.com/test"
+curl "http://localhost:8080/api/personas/page?url=https://example.com/test"
 
 # List personas
-curl "http://localhost:5002/api/personas/list"
+curl "http://localhost:8080/api/personas/list"
 
 # Predict persona
-curl -X POST http://localhost:5002/api/personas/predict \
+curl -X POST http://localhost:8080/api/personas/predict \
   -H "Content-Type: application/json" \
   -d '{"visited_urls": ["https://example.com/page1"], "session_id": "test"}'
 ```

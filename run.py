@@ -42,27 +42,27 @@ def init_db():
         print("Running init_db...")
         db.create_all()
 
-        # Run migrations
-        from migrations.migrate_user_roles import migrate_user_roles
-        from migrations.add_crawl_timestamp_to_content_mappings import migrate_add_crawl_timestamp
-        from migrations.add_failure_tracking_to_crawl_urls import migrate_add_failure_tracking
-        from migrations.cleanup_duplicate_mappings import migrate_cleanup_duplicates
-        from migrations.create_crawl_urls_table import migrate_create_crawl_urls_table
-        from migrations.migrate_crawl_mode import migrate_crawl_mode
+        # Run migrations - commented out for Cloud Run deployment
+        # from migrations.migrate_user_roles import migrate_user_roles
+        # from migrations.add_crawl_timestamp_to_content_mappings import migrate_add_crawl_timestamp
+        # from migrations.add_failure_tracking_to_crawl_urls import migrate_add_failure_tracking
+        # from migrations.cleanup_duplicate_mappings import migrate_cleanup_duplicates
+        # from migrations.create_crawl_urls_table import migrate_create_crawl_urls_table
+        # from migrations.migrate_crawl_mode import migrate_crawl_mode
 
-        migrate_user_roles()
-        migrate_add_crawl_timestamp()
-        migrate_add_failure_tracking()
-        migrate_cleanup_duplicates()
-        migrate_create_crawl_urls_table()
-        migrate_crawl_mode()
+        # migrate_user_roles()
+        # migrate_add_crawl_timestamp()
+        # migrate_add_failure_tracking()
+        # migrate_cleanup_duplicates()
+        # migrate_create_crawl_urls_table()
+        # migrate_crawl_mode()
 
-        # Run RBAC migration
-        from migrations.add_rbac_system import run_migration as rbac_migration
-        try:
-            rbac_migration()
-        except Exception as e:
-            print(f"RBAC migration completed with note: {e}")
+        # # Run RBAC migration
+        # from migrations.add_rbac_system import run_migration as rbac_migration
+        # try:
+        #     rbac_migration()
+        # except Exception as e:
+        #     print(f"RBAC migration completed with note: {e}")
 
         admin = User.query.filter_by(username='admin').first()
         print("Admin user found:", admin)
@@ -205,14 +205,52 @@ def list_users():
             
             print()
 
+# Initialize database for production (gunicorn) deployment
+def init_production_db():
+    """Initialize database when running with gunicorn"""
+    with app.app_context():
+        try:
+            print("Initializing database for production...")
+            db.create_all()
+            print("Database tables created/verified")
+            
+            # Create admin user if not exists
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    email='admin@personamap.local',
+                    role='admin',
+                    is_super_admin=True
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print("Admin user created")
+            else:
+                print("Admin user already exists")
+                
+            print("Database initialization complete")
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+
+# Initialize database if running in production environment
+if os.environ.get('FLASK_ENV') == 'production':
+    init_production_db()
+
 if __name__ == '__main__':
     import sys
-    # Only start the server if no CLI command is given
-    if len(sys.argv) == 1:
+    port = int(os.environ.get("PORT", 8080))
+    
+    # Check if this is a CLI command
+    if len(sys.argv) > 1:
+        # Let Flask handle CLI commands
+        pass
+    else:
+        # Start the web server in development mode
         os.environ.setdefault('FLASK_ENV', 'development')
         os.environ.setdefault('FLASK_DEBUG', '1')
-        print("Starting PersonaMap Application...")
-        print("Access the application at: http://localhost:5002")
+        print("Starting PersonaMap Application in development mode...")
+        print(f"Access the application at: http://localhost:{port}")
         print("Default admin credentials: admin / admin123")
-        app.run(host='0.0.0.0', port=5002, debug=True)
-
+        app.run(host='0.0.0.0', port=port, debug=True)

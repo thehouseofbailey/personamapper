@@ -1,7 +1,9 @@
 # Multi-stage build for PersonaMap
+
+# Base image
 FROM python:3.9-slim as base
 
-# Set environment variables
+# Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=run.py \
@@ -18,41 +20,41 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
+# Working directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy production requirements first for caching
+COPY requirements-prod.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements-prod.txt
 
 # Production stage
 FROM base as production
 
-# Create non-root user
+# Non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Copy application code
+# Create necessary directories and set permissions BEFORE copying code
+RUN mkdir -p /app/instance /app/logs && chown -R appuser:appuser /app
+
+
+
+# Copy app code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p instance logs && \
-    chown -R appuser:appuser /app
+# Make startup script executable
+RUN chmod +x start.sh
 
-# Switch to non-root user
+# Switch to non-root
 USER appuser
 
-# Expose port
-EXPOSE 5002
+# Cloud Run expects this port
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5002/api/health || exit 1
-
-# Default command
-CMD ["python", "run.py"]
+# Default command - use startup script
+CMD ["./start.sh"]
 
 # Development stage
 FROM base as development
@@ -60,14 +62,13 @@ FROM base as development
 # Install development dependencies
 RUN pip install --no-cache-dir flask-debugtoolbar pytest pytest-cov
 
-# Copy application code
+
+# Copy app code
 COPY . .
 
-# Create directories
-RUN mkdir -p instance logs
 
 # Expose port
-EXPOSE 5002
+EXPOSE 8080
 
-# Development command with auto-reload
-CMD ["python", "run.py"]
+# Run with auto-reload for local dev
+CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]

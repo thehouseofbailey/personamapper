@@ -31,17 +31,39 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Set up database (run each migration)
-python migrations/add_rbac_system.py
-python migrations/create_crawl_job_personas_table.py
-python migrations/create_crawl_urls_table.py
-python migrations/add_crawl_timestamp_to_content_mappings.py
-python migrations/add_failure_tracking_to_crawl_urls.py
-python migrations/migrate_user_roles.py
-python migrations/add_ai_config_to_organisations.py
+### 3. Initialize the Database (One-Time Step)
+```bash
+export FLASK_APP=run.py
+flask init-db
+```
 
-# 4. Run the application
+> **Note:** Only run `flask init-db` once to set up the database. Do **not** call `db.create_all()` on every app start.
+
+### 4. Run the application
 python run.py
+
+Or with Docker:
+```bash
+# Build the image
+docker build --target production -t personamap:latest .
+
+# Initialize the database (one-time)
+docker run --rm \
+    -e FLASK_APP=run.py \
+    -e FLASK_ENV=production \
+    -e DATABASE_URL=sqlite:////app/instance/personamap.db \
+    -e SECRET_KEY=your-secret-key \
+    personamap:latest \
+    flask init-db
+
+# Start the app
+docker run -d --name personamap-test \
+    -e FLASK_ENV=production \
+    -e DATABASE_URL=sqlite:////app/instance/personamap.db \
+    -e SECRET_KEY=your-secret-key \
+    -p 8080:8080 \
+    personamap:latest
+```
 ```
 
 ## 📋 System Requirements
@@ -54,7 +76,7 @@ python run.py
 ## 🌐 Accessing the Application
 
 Once started, the application will be available at:
-- **URL**: http://localhost:5002
+- **URL**: http://localhost:8080
 - **Default Admin**: `admin` / `admin123`
 
 ## 🔑 RBAC System
@@ -126,7 +148,7 @@ with app.app_context():
 - Super admin users can access everything
 
 ### Port Conflicts
-If port 5002 is in use, modify `run.py`:
+If port 8080 is in use, modify `run.py`:
 ```python
 app.run(host='0.0.0.0', port=5003, debug=True)  # Change port
 ```

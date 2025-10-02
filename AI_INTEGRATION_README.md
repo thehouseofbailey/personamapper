@@ -39,7 +39,7 @@ Edit `.env` to configure AI settings:
 
 ### Accessing AI Configuration
 
-1. Navigate to an organisation: `http://localhost:5002/organisations/<id>`
+1. Navigate to an organisation: `http://localhost:8080/organisations/<id>`
 2. Click the **"AI Config"** button (requires organisation management permissions)
 3. Configure AI settings for that specific organisation
 
@@ -348,10 +348,10 @@ LOCAL_AI_MODEL=all-MiniLM-L6-v2
 ### Testing AI Analysis
 ```bash
 # Test the AI status endpoint
-curl http://localhost:5002/api/ai/status
+curl http://localhost:8080/api/ai/status
 
 # Test content analysis
-curl -X POST http://localhost:5002/api/ai/analyze \
+curl -X POST http://localhost:8080/api/ai/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "content": "This article discusses API development best practices for software engineers and technical teams.",

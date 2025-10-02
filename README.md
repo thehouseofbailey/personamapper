@@ -57,17 +57,44 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-### 4. Initialize Database and Create Admin User
+
+### 4. Initialize Database (One-Time Step)
 ```bash
-export FLASK_APP=run.py; flask init-db
+export FLASK_APP=run.py
+flask init-db
 ```
+
+> **Note:** Only run `flask init-db` once to set up the database. Do **not** call `db.create_all()` on every app start.
 
 ### 5. Start the Application
 ```bash
 python run.py
 ```
 
-Visit `http://localhost:5002` and login with:
+Or with Docker:
+```bash
+# Build the image
+docker build --target production -t personamap:latest .
+
+# Initialize the database (one-time)
+docker run --rm \
+	-e FLASK_APP=run.py \
+	-e FLASK_ENV=production \
+	-e DATABASE_URL=sqlite:////app/instance/personamap.db \
+	-e SECRET_KEY=your-secret-key \
+	personamap:latest \
+	flask init-db
+
+# Start the app
+docker run -d --name personamap-test \
+	-e FLASK_ENV=production \
+	-e DATABASE_URL=sqlite:////app/instance/personamap.db \
+	-e SECRET_KEY=your-secret-key \
+	-p 8080:8080 \
+	personamap:latest
+```
+
+Visit `http://localhost:8080` and login with:
 - **Username**: admin
 - **Password**: admin123
 
