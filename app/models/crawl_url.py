@@ -20,10 +20,12 @@ class CrawlUrl(db.Model):
     # Relationships
     crawl_job = db.relationship('CrawlJob', backref=db.backref('crawl_urls', lazy='dynamic', cascade='all, delete-orphan'))
     
-    # Indexes for performance
+    # Indexes for performance - MySQL compatible
     __table_args__ = (
-        db.Index('idx_crawl_job_url', 'crawl_job_id', 'url'),
+        # Use separate indexes instead of composite with long VARCHAR
+        db.Index('idx_crawl_job_id', 'crawl_job_id'),
         db.Index('idx_crawl_job_crawled', 'crawl_job_id', 'is_crawled'),
+        db.Index('idx_url_hash', db.text('url(191)')),  # MySQL: Use prefix index for URLs
     )
     
     def __repr__(self):

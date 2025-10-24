@@ -79,6 +79,9 @@ run_migration_safe "migrations/migrate_user_roles.py" "migrate_user_roles()" "Se
 # 7. Add AI config to organisations
 run_migration_safe "migrations/add_ai_config_to_organisations.py" "run_migration()" "Adding AI configuration to organisations"
 
+# 8. Add progress tracking to crawl jobs
+run_migration_safe "migrations/add_progress_tracking_to_crawl_jobs.py" "main()" "Adding progress tracking to crawl jobs"
+
 # Final setup - create default data
 echo "  🏗️  Creating default data..."
 python3 -c "

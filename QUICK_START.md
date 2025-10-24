@@ -42,6 +42,79 @@ flask init-db
 ### 4. Run the application
 python run.py
 
+## 🌐 PythonAnywhere Deployment
+
+### Requirements
+- PythonAnywhere account (free tier available)
+- MySQL database (included with PythonAnywhere)
+
+### Deployment Steps
+
+1. **Prepare your code:**
+   ```bash
+   # Create deployment zip (exclude .venv, __pycache__, instance)
+   zip -r personamap-deploy.zip . -x ".venv/*" "__pycache__/*" "*.pyc" "instance/*" ".git/*"
+   ```
+
+2. **Upload to PythonAnywhere:**
+   - Go to Files tab in PythonAnywhere dashboard
+   - Upload `personamap-deploy.zip`
+   - Extract to `/home/yourusername/personamapper`
+
+3. **Set up MySQL database:**
+   - Go to Databases tab in PythonAnywhere dashboard
+   - Create new MySQL database named `yourusername$personamap`
+   - Note your MySQL password
+
+4. **Configure environment:**
+   ```bash
+   # In PythonAnywhere Bash console
+   cd ~/personamapper
+   
+   # Copy and edit environment file
+   cp .env.pythonanywhere .env
+   
+   # Edit .env with your actual details:
+   # MYSQL_HOST=yourusername.mysql.pythonanywhere-services.com
+   # MYSQL_USER=yourusername  
+   # MYSQL_PASSWORD=your_actual_mysql_password
+   # MYSQL_DB=yourusername$personamap
+   ```
+
+5. **Install dependencies:**
+   ```bash
+   # In PythonAnywhere Bash console
+   cd ~/personamapper
+   pip3.10 install --user -r requirements-pythonanywhere.txt
+   ```
+
+6. **Initialize database:**
+   ```bash
+   # In PythonAnywhere Bash console
+   cd ~/personamapper
+   python3.10 init_db_pythonanywhere.py
+   ```
+
+7. **Configure web app:**
+   - Go to Web tab in PythonAnywhere dashboard
+   - Create new web app → Manual configuration → Python 3.10
+   - Set source code directory: `/home/yourusername/personamapper`
+   - Set working directory: `/home/yourusername/personamapper`
+   - Edit WSGI file: copy content from `wsgi_pythonanywhere.py` and update username
+   - Add static file mapping: URL `/static/` → Directory `/home/yourusername/personamapper/app/static/`
+
+8. **Reload and test:**
+   - Click "Reload" button in Web tab
+   - Visit `https://yourusername.pythonanywhere.com`
+   - Login with admin/admin123
+
+### Benefits of PythonAnywhere:
+- ✅ **Persistent MySQL database** - Data never resets
+- ✅ **Always-on hosting** - No container shutdowns
+- ✅ **Free tier available** - Perfect for development/testing
+- ✅ **Easy file management** - Web-based file editor
+- ✅ **Automatic HTTPS** - Secure by default
+
 ## 🐳 Docker Deployment
 
 ### Local Docker

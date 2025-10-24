@@ -18,6 +18,9 @@ class CrawlJob(db.Model):
     next_run_at = db.Column(db.DateTime)
     pages_crawled = db.Column(db.Integer, default=0, nullable=False)
     pages_mapped = db.Column(db.Integer, default=0, nullable=False)
+    total_discovered_urls = db.Column(db.Integer, default=0, nullable=True)  # Total URLs discovered by sitemap/crawling
+    last_activity_at = db.Column(db.DateTime)  # Last time crawler was active (for real-time progress)
+    progress_percentage = db.Column(db.Float, default=0.0, nullable=True)  # Calculated progress percentage
     error_message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -68,6 +71,25 @@ class CrawlJob(db.Model):
         self.updated_at = datetime.utcnow()
         if status == 'running':
             self.last_run_at = datetime.utcnow()
+            self.last_activity_at = datetime.utcnow()
+    
+    def update_progress(self, pages_crawled=None, total_discovered_urls=None, pages_mapped=None):
+        """Update crawl progress and calculate percentage."""
+        if pages_crawled is not None:
+            self.pages_crawled = pages_crawled
+        if total_discovered_urls is not None:
+            self.total_discovered_urls = total_discovered_urls
+        if pages_mapped is not None:
+            self.pages_mapped = pages_mapped
+            
+        # Calculate progress percentage based on pages crawled vs max_pages
+        if self.max_pages > 0:
+            self.progress_percentage = min((self.pages_crawled / self.max_pages) * 100, 100.0)
+        else:
+            self.progress_percentage = 0.0
+            
+        self.last_activity_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
     
     def to_dict(self):
         """Convert crawl job to dictionary for JSON serialization."""
@@ -84,6 +106,9 @@ class CrawlJob(db.Model):
             'next_run_at': self.next_run_at.isoformat() if self.next_run_at else None,
             'pages_crawled': self.pages_crawled,
             'pages_mapped': self.pages_mapped,
+            'total_discovered_urls': self.total_discovered_urls,
+            'last_activity_at': self.last_activity_at.isoformat() if self.last_activity_at else None,
+            'progress_percentage': self.progress_percentage,
             'success_rate': self.get_success_rate(),
             'error_message': self.error_message,
             'created_at': self.created_at.isoformat(),

@@ -1,10 +1,50 @@
 import os
 from datetime import timedelta
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 class Config:
+    # Use environment variables or fallback to default values
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///personamap.db'
+    
+    # Database configuration for PythonAnywhere MySQL
+    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+    MYSQL_USER = os.environ.get('MYSQL_USER', 'your_username')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'your_password')
+    MYSQL_DB = os.environ.get('MYSQL_DB', 'your_username$personamap')
+    
+    # SQLAlchemy configuration - prefer MySQL, fallback to SQLite for local development
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        # Check if we have MySQL credentials
+        if MYSQL_PASSWORD != 'your_password':
+            DATABASE_URL = f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}?charset=utf8mb4'
+        else:
+            DATABASE_URL = 'sqlite:///instance/personamap.db'
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Enhanced MySQL configuration for PythonAnywhere
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,          # Test connections before use
+        'pool_recycle': 300,            # Recycle connections every 5 minutes
+        'pool_timeout': 30,             # Timeout for getting connection
+        'pool_size': 10,                # Connection pool size
+        'max_overflow': 20,             # Additional connections beyond pool_size
+        'connect_args': {
+            'charset': 'utf8mb4',
+            'connect_timeout': 60,
+            'read_timeout': 600,        # 10 minutes for long queries
+            'write_timeout': 600,       # 10 minutes for long writes
+            'autocommit': False,
+            'init_command': "SET SESSION wait_timeout=3600",  # 1 hour session timeout
+        } if 'mysql' in DATABASE_URL else {}
+    }
     
     # Security settings
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)

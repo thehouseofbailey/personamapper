@@ -39,7 +39,7 @@ class WebCrawler:
         })
         
         # Crawler settings
-        self.delay = 1.0  # Delay between requests (seconds)
+        self.delay = 0.5  # Delay between requests (seconds) - optimized for PythonAnywhere
         self.timeout = 30  # Request timeout
         self.max_retries = 3
         self.respect_robots = False  # Disable robots.txt checking for testing

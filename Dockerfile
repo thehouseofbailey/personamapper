@@ -39,12 +39,15 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Create necessary directories and set permissions BEFORE copying code
 RUN mkdir -p /app/instance /app/logs && chown -R appuser:appuser /app
 
+# Copy application code
+COPY --chown=appuser:appuser run.py config.py start.sh ./
+COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser migrations/ ./migrations/
 
+# Ensure instance directory is writable by appuser
+RUN chown -R appuser:appuser /app/instance && chmod -R 755 /app/instance
 
-# Copy app code
-COPY . .
-
-# Make startup script executable
+# Set executable permissions
 RUN chmod +x start.sh
 
 # Switch to non-root
@@ -55,20 +58,3 @@ EXPOSE 8080
 
 # Default command - use startup script
 CMD ["./start.sh"]
-
-# Development stage
-FROM base as development
-
-# Install development dependencies
-RUN pip install --no-cache-dir flask-debugtoolbar pytest pytest-cov
-
-
-# Copy app code
-COPY . .
-
-
-# Expose port
-EXPOSE 8080
-
-# Run with auto-reload for local dev
-CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]

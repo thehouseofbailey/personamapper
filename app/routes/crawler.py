@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required
 from app import db
 from app.models import CrawlJob, CrawledPage, ContentMapping, CrawlUrl
-from app.services.web_crawler import crawler_manager
+from app.services.web_crawler_pythonanywhere import crawler_manager
 from datetime import datetime
 
 bp = Blueprint('crawler', __name__)
@@ -300,6 +300,37 @@ def start_crawl_job(id):
     
     return redirect(url_for('crawler.view_crawl_job', id=id))
 
+@bp.route('/<int:id>/progress')
+@login_required
+def get_crawl_progress(id):
+    """API endpoint to get real-time crawl progress."""
+    from flask import jsonify
+    
+    crawl_job = CrawlJob.query.get_or_404(id)
+    
+    # Get current statistics
+    total_pages = crawl_job.crawled_pages.count()
+    processed_pages = crawl_job.crawled_pages.filter_by(is_processed=True).count()
+    
+    progress_data = {
+        'id': crawl_job.id,
+        'name': crawl_job.name,
+        'status': crawl_job.status,
+        'pages_crawled': crawl_job.pages_crawled,
+        'max_pages': crawl_job.max_pages,
+        'total_discovered_urls': crawl_job.total_discovered_urls,
+        'progress_percentage': crawl_job.progress_percentage,
+        'last_activity_at': crawl_job.last_activity_at.isoformat() if crawl_job.last_activity_at else None,
+        'is_running': crawl_job.is_running(),
+        'error_message': crawl_job.error_message,
+        # Additional stats
+        'total_pages_in_db': total_pages,
+        'processed_pages': processed_pages,
+        'success_rate': crawl_job.get_success_rate(),
+    }
+    
+    return jsonify(progress_data)
+
 @bp.route('/<int:id>/stop', methods=['POST'])
 @login_required
 def stop_crawl_job(id):
@@ -463,7 +494,7 @@ def recrawl_page(id):
     
     try:
         # Import here to avoid circular imports
-        from app.services.web_crawler import WebCrawler
+        from app.services.web_crawler_pythonanywhere import PythonAnywhereWebCrawler as WebCrawler
         from app.services.content_analyzer import ContentAnalyzer
         from app.models import Persona
         import requests
