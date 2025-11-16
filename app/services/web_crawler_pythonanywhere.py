@@ -403,9 +403,17 @@ class PythonAnywhereWebCrawler:
     
     def analyze_and_map_content(self, page: CrawledPage) -> None:
         """Analyze page content and create persona mappings with historical tracking."""
+        logger.info(f"ANALYZE: Starting content analysis for page {page.url} (ID: {page.id})")
+        logger.info(f"ANALYZE: Page content length: {len(page.content or '')} chars")
         try:
-            # Get all active personas
-            personas = Persona.query.filter_by(is_active=True).all()
+            # Get personas assigned to this specific crawl job
+            personas = self.crawl_job.get_personas()
+            logger.info(f"ANALYZE: Found {len(personas)} personas assigned to crawl job {self.crawl_job.id}")
+            
+            if not personas:
+                logger.warning(f"ANALYZE: No personas assigned to crawl job {self.crawl_job.id}. Skipping content analysis.")
+                return
+            
             crawl_timestamp = datetime.utcnow()
             
             # For historical tracking, we always create new mappings
@@ -426,31 +434,46 @@ class PythonAnywhereWebCrawler:
             
             # Ensure content analyzer is available
             if not self.content_analyzer:
-                logger.error("Content analyzer not initialized. Cannot create mappings.")
+                logger.error("ANALYZE: Content analyzer not initialized. Cannot create mappings.")
                 return 0
             
+            logger.info(f"ANALYZE: Content analyzer is available, processing {len(personas)} personas")
+            
             for persona in personas:
-                # Analyze content for this persona
-                mapping_result = self.content_analyzer.analyze_content_for_persona(
-                    page.content, persona
-                )
+                logger.info(f"ANALYZE: Processing persona '{persona.title}' for page {page.url}")
+                logger.info(f"ANALYZE: Persona has {len(persona.keywords or '')} chars of keywords")
                 
-                if mapping_result['should_map']:
-                    # Create new content mapping with crawl timestamp
-                    mapping = ContentMapping(
-                        persona_id=persona.id,
-                        page_id=page.id,
-                        confidence_score=mapping_result['confidence'],
-                        mapping_reason=mapping_result['reason'],
-                        mapping_method='automated_crawl',
-                        crawl_timestamp=crawl_timestamp,
-                        is_active=True
+                try:
+                    # Analyze content for this persona
+                    mapping_result = self.content_analyzer.analyze_content_for_persona(
+                        page.content, persona
                     )
                     
-                    db.session.add(mapping)
-                    new_mappings_count += 1
-                    self.stats['pages_mapped'] += 1
-                    logger.info(f"Created new mapping for page {page.url} -> persona {persona.title} (confidence: {mapping_result['confidence']:.2f})")
+                    logger.info(f"ANALYZE: Analysis result for '{persona.title}': should_map={mapping_result.get('should_map', False)}, confidence={mapping_result.get('confidence', 0.0)}, reason='{mapping_result.get('reason', 'no reason')}'")
+                    
+                    if mapping_result['should_map']:
+                        # Create new content mapping with crawl timestamp
+                        mapping = ContentMapping(
+                            persona_id=persona.id,
+                            page_id=page.id,
+                            confidence_score=mapping_result['confidence'],
+                            mapping_reason=mapping_result['reason'],
+                            mapping_method='automated_crawl',
+                            crawl_timestamp=crawl_timestamp,
+                            is_active=True
+                        )
+                        
+                        db.session.add(mapping)
+                        new_mappings_count += 1
+                        self.stats['pages_mapped'] += 1
+                        logger.info(f"ANALYZE: ✅ Created new mapping for page {page.url} -> persona {persona.title} (confidence: {mapping_result['confidence']:.2f})")
+                    else:
+                        logger.info(f"ANALYZE: ❌ No mapping created for '{persona.title}': {mapping_result.get('reason', 'unknown reason')}")
+                        
+                except Exception as e:
+                    logger.error(f"ANALYZE: Exception analyzing persona '{persona.title}': {e}")
+                    import traceback
+                    logger.error(f"ANALYZE: Traceback: {traceback.format_exc()}")
             
             logger.info(f"Created {new_mappings_count} new mappings for page {page.url}")
             
@@ -480,9 +503,15 @@ class PythonAnywhereWebCrawler:
             if not page:
                 return False
             
-            # Skip content analysis during crawling for speed - can be analyzed later
-            # self.analyze_and_map_content(page)
-            logger.info(f"Skipped content analysis for {page.url} (can be analyzed later for speed)")
+            # Analyze content and create persona mappings
+            logger.info(f"CRAWLER: About to analyze content for page {page.url} (ID: {page.id})")
+            try:
+                self.analyze_and_map_content(page)
+                logger.info(f"CRAWLER: Content analysis completed for page {page.url}")
+            except Exception as e:
+                logger.error(f"CRAWLER: Content analysis FAILED for page {page.url}: {e}")
+                import traceback
+                logger.error(f"CRAWLER: Traceback: {traceback.format_exc()}")
             
             # Extract and queue new links
             links = self.extract_links(soup, url)
@@ -729,10 +758,15 @@ class PythonAnywhereWebCrawler:
             if not page:
                 return False, "Failed to save page to database"
             
-            # Skip content analysis for speed testing - database operations only
-            # self.analyze_and_map_content(page)
-            # Minimal logging for speed test
-            print(f"FAST: Skipped analysis for {page.url}")
+            # Analyze content and create persona mappings
+            logger.info(f"CRAWLER: About to analyze content for page {page.url} (ID: {page.id})")
+            try:
+                self.analyze_and_map_content(page)
+                logger.info(f"CRAWLER: Content analysis completed for page {page.url}")
+            except Exception as e:
+                logger.error(f"CRAWLER: Content analysis FAILED for page {page.url}: {e}")
+                import traceback
+                logger.error(f"CRAWLER: Traceback: {traceback.format_exc()}")
             
             # Extract and store new URLs found on this page
             self.discover_and_store_new_urls(soup, url)

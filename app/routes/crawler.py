@@ -204,6 +204,7 @@ def edit_crawl_job(id):
         exclude_patterns = request.form.get('exclude_patterns', '').strip()
         max_pages = request.form.get('max_pages', type=int)
         schedule = request.form.get('schedule', '').strip()
+        persona_ids = request.form.getlist('persona_ids')
         
         # Validation
         errors = []
@@ -237,6 +238,10 @@ def edit_crawl_job(id):
         if errors:
             for error in errors:
                 flash(error, 'error')
+            # Get personas data for the form
+            from app.models.persona import Persona
+            available_personas = Persona.query.all()
+            current_persona_ids = [str(p.id) for p in crawl_job.get_personas()]
             return render_template('crawler/edit.html',
                                  crawl_job=crawl_job,
                                  name=name,
@@ -244,7 +249,9 @@ def edit_crawl_job(id):
                                  include_patterns=include_patterns,
                                  exclude_patterns=exclude_patterns,
                                  max_pages=max_pages,
-                                 schedule=schedule)
+                                 schedule=schedule,
+                                 available_personas=available_personas,
+                                 current_persona_ids=current_persona_ids)
         
         # Update crawl job
         crawl_job.name = name
@@ -254,12 +261,35 @@ def edit_crawl_job(id):
         crawl_job.max_pages = max_pages
         crawl_job.schedule = schedule if schedule else None
         
+        # Update persona assignments
+        from app.models.crawl_job_persona import CrawlJobPersona
+        
+        # Remove existing persona assignments
+        CrawlJobPersona.query.filter_by(crawl_job_id=crawl_job.id).delete()
+        
+        # Add new persona assignments
+        for persona_id in persona_ids:
+            if persona_id:  # Make sure it's not empty
+                crawl_job_persona = CrawlJobPersona(
+                    crawl_job_id=crawl_job.id,
+                    persona_id=int(persona_id)
+                )
+                db.session.add(crawl_job_persona)
+        
         db.session.commit()
         
         flash(f'Crawl job "{name}" updated successfully!', 'success')
         return redirect(url_for('crawler.view_crawl_job', id=crawl_job.id))
     
-    return render_template('crawler/edit.html', crawl_job=crawl_job)
+    # Get personas data for the form
+    from app.models.persona import Persona
+    available_personas = Persona.query.all()
+    current_persona_ids = [str(p.id) for p in crawl_job.get_personas()]
+    
+    return render_template('crawler/edit.html', 
+                         crawl_job=crawl_job,
+                         available_personas=available_personas,
+                         current_persona_ids=current_persona_ids)
 
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
