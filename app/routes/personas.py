@@ -3,6 +3,7 @@ from flask_login import login_required
 from app import db
 from app.models import Persona, ContentMapping
 from app.forms import PersonaForm
+from app.auth.permissions import website_manager_required, persona_manager_required
 
 bp = Blueprint('personas', __name__)
 
@@ -104,6 +105,7 @@ def view_persona(id):
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@persona_manager_required()
 def edit_persona(id):
     """Edit an existing persona."""
     persona = Persona.query.get_or_404(id)
@@ -126,6 +128,7 @@ def edit_persona(id):
 
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
+@persona_manager_required()
 def delete_persona(id):
     """Soft delete a persona (mark as inactive)."""
     persona = Persona.query.get_or_404(id)
